@@ -35,6 +35,6 @@
     "compile": "npx hardhat compile",
     "deploy": "npx hardhat run scripts/deploy-lineaTestnet.js --network lineaTestnet",
     "verify": "npx hardhat verify --network lineaTestnet",
-    "verifyArgs": "npx hardhat verify --constructor-args scripts/verifyArgs.js"
+    "verifyAll": "npx hardhat run scripts/verifyAll.js --network lineaTestnet"
   }
 }

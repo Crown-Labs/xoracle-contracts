@@ -53,6 +53,15 @@ module.exports = {
     apiKey: {
       lineaTestnet: `${process.env.LINEA_TESTNET_APIKEY}`,
     },
+    customChains: [{
+        network: "lineaTestnet",
+        chainId: parseInt(`${process.env.LINEA_TESTNET_CHAIN_ID}`),
+        urls: {
+          apiURL: "https://api-testnet.lineascan.build/api",
+          browserURL: "https://goerli.lineascan.build/"
+        }
+      },
+    ], 
   }, 
   mocha: {
     timeout: 100000

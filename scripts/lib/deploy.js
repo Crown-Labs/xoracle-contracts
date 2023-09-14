@@ -8,6 +8,7 @@ const deployedAddress = readTmpAddresses()
 const contactAddress = {
   // contract
   xOracle: deployedAddress['XOracle'],
+  XOracle_logic: deployedAddress['XOracle_logic'],
   weth: config.tokens[getChainId(network)].weth,
   btcPriceFeed: deployedAddress['BTC/USD PriceFeed'],
   ethPriceFeed: deployedAddress['ETH/USD PriceFeed'],
@@ -129,6 +130,7 @@ async function sendTxn(txnPromise, label) {
 }
 
 module.exports = {
+  deployedAddress,
   getContractAddress,
   deployContract,
   contractAt,

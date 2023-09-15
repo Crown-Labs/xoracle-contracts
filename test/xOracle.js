@@ -178,7 +178,7 @@ describe('\n📌 ### Test xOracle ###\n', function () {
     await expect(testOraclePrice.connect(user1).requestUpdatePrices(expireTime)).to.be.revertedWith('insufficient request fee')
   })
 
-  it('Test requestPrices ', async function () {
+  it('Test requestPrices', async function () {
     const [deployer, proxyAdmin, relayNode, user1, user2] = await ethers.getSigners()
     const PriceFeedStore = await ethers.getContractFactory('PriceFeedStore')
 
@@ -485,6 +485,41 @@ describe('\n📌 ### Test xOracle ###\n', function () {
     await expect(await xOracle.threshold()).eq(signers.length)
   })
 
+  it('Test prices count of signer is not equal', async function () {
+    const [deployer, proxyAdmin, relayNode, user1, user2] = await ethers.getSigners()
+
+    // remove price of tokenIndex from signer data
+    const testCase = [
+      { signerIndex: 1, tokenIndex: 2 },
+      { signerIndex: 2, tokenIndex: 0 },
+      { signerIndex: 0, tokenIndex: 0 },
+    ]
+
+    for (const test of testCase) {
+      // updatePrice
+      const expireTime = 0
+      await testOraclePrice.connect(user1).requestUpdatePrices(expireTime)
+
+      const reqID = await xOracle.reqId() // last reqId (assume only one used)
+      const request = await getRequest(reqID)
+
+      // simulate: next block time 120 sec
+      await helpers.time.increase(120)
+
+      const timestamp = request.timestamp.toString()
+      let data = await makePricefeedData(1.5, timestamp, (signerIndex, prices) => {
+        // remove some price from signer
+        if (signerIndex == test.signerIndex) {
+          return prices.filter((item) => item.tokenIndex != test.tokenIndex)
+        }
+        return prices
+      })
+
+      let tx = await xOracle.connect(relayNode).fulfillRequest(data, reqID)
+      await expect(tx).to.emit(xOracle, 'FulfillRequest').withArgs(reqID, false, 'setPrices: prices count of signer is not equal')
+    }
+  })
+
   it('Gas used requestPrices', async function () {
     const [deployer, proxyAdmin, relayNode, user1, user2] = await ethers.getSigners()
 
@@ -696,16 +731,24 @@ function makePricelist() {
   ]
 }
 
-async function makePricefeedData(slippage = 0, timestamp = 0) {
+async function makePricefeedData(slippage = 0, timestamp = 0, callback = undefined) {
   const prices = pricelist[random(pricelist.length)]
   if (timestamp == 0) {
     timestamp = await getBlockTimestamp()
   }
 
+  let signerIndex = 0
   return await Promise.all(
     await signers.map(async (signer) => {
       // make price slippage
-      const priceSlippage = randomPriceSlippage(prices, slippage)
+      let priceSlippage = randomPriceSlippage(prices, slippage)
+
+      // callback to manual manipulate price before signed
+      if (callback) {
+        priceSlippage = callback(signerIndex, priceSlippage)
+        signerIndex++
+      }
+
       return makePricefeed(signer, timestamp, priceSlippage)
     })
   )

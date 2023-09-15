@@ -9,7 +9,7 @@ let errors = []
 function makeParameter(name) {
   var param = []
   if (name == 'XOracle') {
-    param = [getContractAddress('XOracle_logic'), config.proxyAdmin, '0x']
+    param = [getContractAddress('xOracle_logic'), config.proxyAdmin, '0x']
   } else if (name == 'BTC/USD PriceFeed') {
     param = [getContractAddress('xOracle'), 'BTC/USD Price Feed', 0, 8]
   } else if (name == 'ETH/USD PriceFeed') {

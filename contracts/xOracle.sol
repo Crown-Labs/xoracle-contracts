@@ -258,6 +258,11 @@ contract XOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeable {
                 if (i == 0) { 
                     // allocate first dimension
                     tokenIndexPrices = new uint256[][](prices.length);
+                } else {
+                    // check prices count of other signers must equal to signer[0]
+                    if (prices.length != size) {
+                        return (false, "setPrices: prices count of signer is not equal");
+                    }
                 }
 
                 // collect tokenIndex and prices

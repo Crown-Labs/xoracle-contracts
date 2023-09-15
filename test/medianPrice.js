@@ -9,7 +9,7 @@ describe('\n📌 ### Test Median Price ###\n', function () {
   })
 
   it('Test size = odd', async function () {
-    const test_case = [
+    const testCase = [
       [5, 4, 3, 5, 1],
       [5, 5, 3, 5, 1],
       [4, 5, 3, 5, 1],
@@ -22,7 +22,7 @@ describe('\n📌 ### Test Median Price ###\n', function () {
       randomPrices(0, 100, 101),
     ]
 
-    for (const prices of test_case) {
+    for (const prices of testCase) {
       const medianPrice = getMedianPrice(prices)
       const result = await testMedianPrice.getMedianPrice(prices)
       expect(result).to.eq(medianPrice)
@@ -30,7 +30,7 @@ describe('\n📌 ### Test Median Price ###\n', function () {
   })
 
   it('Test size = even', async function () {
-    const test_case = [
+    const testCase = [
       [5, 4, 3, 5, 1, 5],
       [5, 5, 3, 5, 1, 0],
       [4, 5, 3, 5, 1, 9],
@@ -43,7 +43,7 @@ describe('\n📌 ### Test Median Price ###\n', function () {
       randomPrices(0, 100, 102),
     ]
 
-    for (const prices of test_case) {
+    for (const prices of testCase) {
       const medianPrice = getMedianPrice(prices)
       const result = await testMedianPrice.getMedianPrice(prices)
       expect(result).to.eq(Math.floor(medianPrice))
@@ -51,7 +51,7 @@ describe('\n📌 ### Test Median Price ###\n', function () {
   })
 
   it('Estimate gas', async function () {
-    const test_case = [
+    const testCase = [
       [9],
       [5, 5],
       [1, 2, 3],
@@ -69,7 +69,7 @@ describe('\n📌 ### Test Median Price ###\n', function () {
       randomPrices(0, 100, 101),
     ]
 
-    for (const prices of test_case) {
+    for (const prices of testCase) {
       const estimation = await testMedianPrice.estimateGas.getMedianPrice(prices)
       console.log(`size: ${prices.length}, odd=${prices.length % 2 == 1}`, +estimation)
     }

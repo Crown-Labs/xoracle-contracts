@@ -36,12 +36,6 @@ module.exports = {
   networks: {
     hardhat: {
     },
-    opbnbTestnet: {
-      url: `${process.env.OPBNB_TESTNET_RPC}`,
-      chainId: parseInt(`${process.env.OPBNB_TESTNET_CHAIN_ID}`),
-      gasPrice: parseInt(`${process.env.OPBNB_TESTNET_GAS_PRICE}`) * 10**9,
-      // accounts: [`0x${process.env.PRIVATE_KEY}`],
-    },
     lineaTestnet: {
       url: `${process.env.LINEA_TESTNET_RPC}`,
       chainId: parseInt(`${process.env.LINEA_TESTNET_CHAIN_ID}`),

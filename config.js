@@ -1,5 +1,4 @@
 const networkId = {
-  opbnbTestnet: 5611,
   lineaTestnet: 59140,
 }
 
@@ -15,10 +14,6 @@ const config = {
   relayNodes: ['0x9642955e650f8F380e9e5f978C910D684b7a0805', '0xE49EE57521a4eDF93Cb62013CF5B263660b3dD79'],
   // tokens
   tokens: {
-    5611: {
-      // opBNBTestnet
-      weth: '0x617d91847b74B70a3D3e3745445cb0d1b3c8560E', // (WBNB)
-    },
     59140: {
       // lineaTestnet
       weth: '0x2C1b868d6596a18e32E61B901E4060C872647b6C',

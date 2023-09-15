@@ -34,15 +34,16 @@ async function main() {
     OP: 28,
     ARB: 29,
   }
-  var list = []
+  let list = []
+  let xOracle
 
-  // false = delay new PriceFeedStore
-  // true = migrate PriceFeedStore to new xOracle
-  const isMigrate = false
+  // false = new deploy all contracts
+  // true = migrate to new xOracle logic
+  const isMigrate = true
 
   // deploy logic
   const xOracle_logic = await deployContract('XOracle', [], 'XOracle_logic', deployer)
-  // const xOracle_logic = await contractAt("XOracle", getContractAddress("XOracle_logic"), deployer);
+  // const xOracle_logic = await contractAt("XOracle", getContractAddress("xOracle_logic"), deployer);
 
   // xOracle
   if (!isMigrate) {
@@ -54,19 +55,13 @@ async function main() {
     xOracle = await contractAt('XOracle', xOracle_proxy.address, deployer)
     await xOracle.initialize(wethAddress)
   } else {
-    // switch to proxyAdmin
-    await switchSigner(proxyAdmin)
-
-    // proxy upgrade new logic
-    const xOracle_proxy = await contractAt('AdminUpgradeabilityProxy', getContractAddress('XOracle'), deployer)
-    await sendTxn(xOracle_proxy.upgradeTo(xOracle_new_logic.address), `xOracle.upgradeTo(${xOracle_new_logic.address})`)
-
-    // switch to deployer
-    await switchSigner(`deployer`)
+    // to upgrade proxy in end for script
+    xOracle = await contractAt('XOracle', getContractAddress('xOracle'), deployer)
   }
 
   // PriceFeedStore
   if (!isMigrate) {
+    // deploy
     let keys = Object.keys(tokenIndexs)
     let values = Object.values(tokenIndexs)
     for (let i = 0; i < Object.keys(tokenIndexs).length; i++) {
@@ -79,6 +74,7 @@ async function main() {
       })
     }
   } else {
+    // get contracts
     let keys = Object.keys(tokenIndexs)
     for (let i = 0; i < Object.keys(tokenIndexs).length; i++) {
       let key = keys[i]
@@ -89,8 +85,6 @@ async function main() {
         contract: contract,
         tokenIndex: tokenIndexs[key],
       })
-
-      await sendTxn(contract.setXOracle(xOracle.address), `${name}.setXOracle(${xOracle.address})`)
     }
   }
 
@@ -112,6 +106,19 @@ async function main() {
   // set reqFee
   await sendTxn(xOracle.setFulfillFee(fulfillFee), `xOracle.setFulfillFee(${fulfillFee})`)
   await sendTxn(xOracle.setMinFeeBalance(minFeeBalance), `xOracle.setMinFeeBalance(${minFeeBalance})`)
+
+  // for upgrade proxy
+  if (isMigrate) {
+    // switch to proxyAdmin
+    await switchSigner(proxyAdmin)
+
+    // proxy upgrade new logic
+    const xOracle_proxy = await contractAt('AdminUpgradeabilityProxy', getContractAddress('xOracle'), deployer)
+    await sendTxn(xOracle_proxy.upgradeTo(xOracle_logic.address), `xOracle.upgradeTo(${xOracle_logic.address})`)
+
+    // switch to deployer
+    await switchSigner(`deployer`)
+  }
 }
 
 async function switchSigner(address) {

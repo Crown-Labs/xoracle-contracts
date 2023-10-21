@@ -26,6 +26,7 @@ Local Setup Steps:
 |BTC/USD PriceFeed            |[0x3432dD444774c4A88D330EdB127D837072e5cc9e](https://goerli.lineascan.build/address/0x3432dD444774c4A88D330EdB127D837072e5cc9e)|
 |ETH/USD PriceFeed            |[0xe767d64F9b37fe809232a7f20304d28F03EED2B1](https://goerli.lineascan.build/address/0xe767d64F9b37fe809232a7f20304d28F03EED2B1)|
 |BNB/USD PriceFeed            |[0x0c8b54e305E8CBb9958671a9C02467328EF4c95C](https://goerli.lineascan.build/address/0x0c8b54e305E8CBb9958671a9C02467328EF4c95C)|
+|USDT/USD PriceFeed            |[0x4B114D9D36b09FcC71C492C29e7F8796C655A08d](https://goerli.lineascan.build/address/0x4B114D9D36b09FcC71C492C29e7F8796C655A08d)|
 |BUSD/USD PriceFeed            |[0x4926B8803db627a3a77687cB9160725c0845Aabb](https://goerli.lineascan.build/address/0x4926B8803db627a3a77687cB9160725c0845Aabb)|
 |USDC/USD PriceFeed            |[0xA23902465EC47904b4b53dCD95f2395b45F33E4F](https://goerli.lineascan.build/address/0xA23902465EC47904b4b53dCD95f2395b45F33E4F)|
 |MATIC/USD PriceFeed            |[0xE41CEc959C332968226B2a07f6252Bc57964de1d](https://goerli.lineascan.build/address/0xE41CEc959C332968226B2a07f6252Bc57964de1d)|

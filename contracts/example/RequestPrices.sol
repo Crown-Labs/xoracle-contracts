@@ -11,7 +11,7 @@ interface IXOracle {
 }
 
 // ------------------------------
-// RequestPrice 
+// RequestPrices 
 // a simple contract to request price from xOracle
 // ------------------------------
 contract RequestPrices {

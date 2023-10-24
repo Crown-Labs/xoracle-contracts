@@ -1,7 +1,7 @@
 const { expect } = require('chai')
 const helpers = require('@nomicfoundation/hardhat-network-helpers')
 const crypto = require('crypto')
-const { toWei, toETH } = require('../scripts/lib/helper.js')
+const { toWei, toETH } = require('../../scripts/lib/helper.js')
 
 const tokenIndexs = {
   BTC: 0,
@@ -26,7 +26,7 @@ let pricePrecision
 const fulfillFee = 3000 // 30%
 const minFeeBalance = 0.02 * 10 ** 9
 
-describe('\n📌 ### Test Sample App: Simple Trade ###\n', function () {
+describe('\n📌 ### Test Example: Simple Trade ###\n', function () {
   before('Initial data', async function () {
     console.log('👻 make signers')
     makeSigner(3)

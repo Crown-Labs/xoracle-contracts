@@ -5,27 +5,16 @@ pragma solidity ^0.8.18;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface IXOracle {
-    struct Request {
-        uint256 timestamp;
-        address owner;
-        bytes payload;
-        uint256 status; // 0 = request,  1 = fulfilled, 2 = cancel, 3 = refund
-        uint256 expiration;
-        uint256 reqFee;
-        uint256 gasPrice;
-        uint256 gasLimit;
-    }
     function requestPrices(bytes memory payload, uint256 expiration) external payable returns (uint256);
     function cancelRequestPrice(uint256 _reqId) external;
     function xOracleCall(uint256 reqId, bool priceUpdate, bytes memory payload) external;
     function getLastPrice(uint256 tokenIndex) external view returns (uint256, uint256, uint256, uint256);
-    function getRequest(uint256 _reqId) external view returns (Request memory);
 }
 
 // ------------------------------
 // SimpleTrade 
 // a simple trading contract (with LONG only, no leverage)
-// for sample integration with xOracle
+// for example integration with xOracle
 // ------------------------------
 contract SimpleTrade {
     // xoracle 

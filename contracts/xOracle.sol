@@ -406,7 +406,7 @@ contract XOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeable {
             IERC20(weth).transfer(_to, reqFee);
         }
 
-        emit TransferRequestFee(_reqId, _from, msg.sender, reqFee);
+        emit TransferRequestFee(_reqId, _from, _to, reqFee);
         return reqFee;
     }
 

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.18;
+pragma solidity 0.8.19;
 
 contract TestMedianPrice {
     function getMedianPrice(uint256[] memory _prices) external pure returns(uint256) {

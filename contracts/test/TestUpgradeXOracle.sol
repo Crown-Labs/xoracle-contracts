@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.18;
+pragma solidity 0.8.19;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
@@ -8,10 +8,6 @@ import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../interfaces/IPriceFeed.sol";
 import "../interfaces/IPriceFeedStore.sol";
-
-interface IXOracle {
-    function xOracleCall(uint256 reqId, bool priceUpdate, bytes memory payload) external;
-}
 
 contract TestUpgradeXOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeable {
     // constants
@@ -39,6 +35,9 @@ contract TestUpgradeXOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeab
         bytes payload;
         uint256 status; // 0 = request,  1 = fulfilled, 2 = cancel, 3 = refund
         uint256 expiration;
+        uint256 maxGasPrice;
+        uint256 callbackGasLimit;
+        uint256 depositReqFee;
     }
     mapping(uint256 => Request) public requests;
     uint256 public reqId; // start with 1
@@ -46,7 +45,7 @@ contract TestUpgradeXOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeab
     // request fee
     IERC20 public weth; // payment with WETH
     uint256 public fulfillFee;
-    uint256 public minFeeBalance;
+    uint256 public minGasPrice;
 
     // price feed store
     mapping(uint256 => address) public priceFeedStores;
@@ -72,7 +71,7 @@ contract TestUpgradeXOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeab
     event SetWhitelist(address whitelist, bool flag);
     event SetOnlyWhitelist(bool flag);
     event SetFulfillFee(uint256 fulfillFee);
-    event SetMinFeeBalance(uint256 minFeeBalance);
+    event SetMinGasPrice(uint256 minGasPrice);
 
     modifier onlyController() {
         require(controller[msg.sender], "controller: forbidden");
@@ -95,12 +94,15 @@ contract TestUpgradeXOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeab
     // ------------------------------
     // request
     // ------------------------------
-    function requestPrices(bytes memory _payload, uint256 _expiration) external onlyContract whenNotPaused returns (uint256) { 
+    function requestPrices(bytes memory _payload, uint256 _expiration, uint256 _maxGasPrice, uint256 _callbackGasLimit) external onlyContract whenNotPaused returns (uint256) { 
         // check allow all or only whitelist
         require(!onlyWhitelist || whitelists[msg.sender], "whitelist: forbidden");
 
-        // check request fee balance
-        require(paymentAvailable(msg.sender), "insufficient request fee");
+        // check gas price
+        require(_maxGasPrice >= minGasPrice, "gas price is too low");
+
+        // deposit request fee
+        uint256 reqFee = transferRequestFee(reqId, msg.sender, address(this), _callbackGasLimit, _maxGasPrice);
 
         reqId++;
 
@@ -115,7 +117,10 @@ contract TestUpgradeXOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeab
             owner: msg.sender,
             payload: _payload,
             status: 0, // set status request
-            expiration: _expiration
+            expiration: _expiration,
+            maxGasPrice: _maxGasPrice,
+            callbackGasLimit: _callbackGasLimit,
+            depositReqFee: reqFee
         });
         
         emit RequestPrices(reqId);
@@ -129,6 +134,9 @@ contract TestUpgradeXOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeab
 
         // set status cancel
         request.status = 2;
+
+        // refund request fee
+        IERC20(weth).transfer(request.owner, request.depositReqFee);
 
         emit CancelRequestPrices(_reqId);
     }
@@ -154,15 +162,24 @@ contract TestUpgradeXOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeab
         (bool priceUpdate, string memory message) = setPrices(request.timestamp, _data);
 
         // callback
-        xOracleCallback(request.owner, _reqId, priceUpdate, request.payload);
+        xOracleCallback(request.owner, _reqId, priceUpdate, request.payload, request.callbackGasLimit);
 
+        // check gas used
+        uint256 gasUsed = gasStart - gasleft();
+        require (gasUsed <= request.callbackGasLimit, "callbackGasLimit exceeded");
+        
         // payment request fee
-        transferRequestFee(_reqId, request.owner, gasStart - gasleft());
+        uint256 reqFee = transferRequestFee(_reqId, address(this), msg.sender, gasUsed, tx.gasprice);
+
+        // refund request fee
+        if (request.depositReqFee > reqFee) {
+            IERC20(weth).transfer(request.owner, request.depositReqFee - reqFee);
+        }
 
         emit FulfillRequest(_reqId, priceUpdate, message);
     }
 
-    function refundRequest(uint256 _reqId) external onlyController { 
+    function refundRequest(uint256 _reqId) external onlyController {
         Request storage request = requests[_reqId];
         if (request.status != 0) {
             return;
@@ -171,8 +188,11 @@ contract TestUpgradeXOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeab
         request.status = 3;
 
         // callback
-        xOracleCallback(request.owner, _reqId, false, request.payload);
-
+        xOracleCallback(request.owner, _reqId, false, request.payload, request.callbackGasLimit);
+        
+        // refund request fee
+        IERC20(weth).transfer(request.owner, request.depositReqFee);
+        
         emit RefundRequest(_reqId);
     }
 
@@ -188,15 +208,8 @@ contract TestUpgradeXOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeab
 
         // xOracleCallback with mockup reqId = 0
         if (priceUpdate) {
-            try IXOracle(_callback).xOracleCall(0, priceUpdate, _payload) {
-                // well done
-            } catch Error(string memory _reason) {
-                // failing revert, require
-                message = _reason;
-            } catch (bytes memory) {
-                // failing assert
-                message = "failing assert";
-            }   
+            (, bytes memory data) = _callback.call(abi.encodeWithSignature("xOracleCall(uint256,bool,bytes)", 0, priceUpdate, _payload));
+            message = string(data);
         }
         
         // calcualte gas consumed and revert tx
@@ -207,17 +220,11 @@ contract TestUpgradeXOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeab
     // ------------------------------
     // private function
     // ------------------------------
-    function xOracleCallback(address _to, uint256 _reqId, bool _priceUpdate, bytes memory _payload) private {
-        try IXOracle(_to).xOracleCall(_reqId, _priceUpdate, _payload) {
-            // well done
-            emit XOracleCall(_reqId, true, "");
-        } catch Error(string memory _reason) {
-            // failing revert, require
-            emit XOracleCall(_reqId, false, _reason);
-        } catch (bytes memory) {
-            // failing assert
-            emit XOracleCall(_reqId, false, "failing assert");
-        }
+    function xOracleCallback(address _to, uint256 _reqId, bool _priceUpdate, bytes memory _payload, uint256 _callbackGasLimit) private {
+        (bool success, bytes memory data) = _to.call{gas: _callbackGasLimit}(
+            abi.encodeWithSignature("xOracleCall(uint256,bool,bytes)", _reqId, _priceUpdate, _payload)
+        );
+        emit XOracleCall(_reqId, success, string(data));
     }
 
     function setPrices(uint256 _timestamp, Data[] memory _data) private returns (bool, string memory) { 
@@ -265,6 +272,11 @@ contract TestUpgradeXOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeab
                 if (i == 0) { 
                     // allocate first dimension
                     tokenIndexPrices = new uint256[][](prices.length);
+                } else {
+                    // check prices count of other signers must equal to signer[0]
+                    if (prices.length != size) {
+                        return (false, "setPrices: prices count of signer is not equal");
+                    }
                 }
 
                 // collect tokenIndex and prices
@@ -328,9 +340,9 @@ contract TestUpgradeXOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeab
         return _pricesData;
     }
 
-    function getMedianPrice(uint256[] memory prices) private pure returns(uint256) {
+    function getMedianPrice(uint256[] memory _prices) private pure returns(uint256) {
         // gas optimize: direct find median price without sorting array before
-        uint256 size = prices.length;
+        uint256 size = _prices.length;
 
         if (size % 2 == 1) {
             // odd size
@@ -339,13 +351,13 @@ contract TestUpgradeXOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeab
             for (uint256 i = 0; i < size; i++) {
                 uint256 gte = 0;
                 for (uint256 j = 0; j < size; j++) {
-                    if (prices[i] >= prices[j] && i >= j) {
+                    if (_prices[i] > _prices[j] || (_prices[i] == _prices[j] && i <= j)) {
                         gte++;
                     }
                 }
                 
                 if (gte == mid) {
-                    return prices[i];
+                    return _prices[i];
                 }
             }
         } else {
@@ -358,15 +370,15 @@ contract TestUpgradeXOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeab
             for (uint256 i = 0; i < size; i++) {
                 uint256 gte = 0;
                 for (uint256 j = 0; j < size; j++) {
-                    if (prices[i] >= prices[j] && i >= j) {
+                    if (_prices[i] > _prices[j] || (_prices[i] == _prices[j] && i <= j)) {
                         gte++;
                     }
                 }
                 
                 if (gte == mid1) {
-                    val1 = prices[i];
+                    val1 = _prices[i];
                 } else if (gte == mid2) {
-                    val2 = prices[i];
+                    val2 = _prices[i];
                 }
 
                 if (val1 != 0 && val2 != 0) {
@@ -385,23 +397,24 @@ contract TestUpgradeXOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeab
         return _timestamp & TIMESTAMP_BITMASK;
     }
 
-    function transferRequestFee(uint256 _reqId, address _from, uint256 _gasUsed) private {
+    function transferRequestFee(uint256 _reqId, address _from, address _to, uint256 _gasUsed, uint256 _gasPrice) private returns(uint256) {
         if (fulfillFee == 0) {
-            return;
+            return 0;
+        }
+        
+        // calculate request fee
+        uint256 reqFee = (_gasPrice * _gasUsed * (FULFILL_FEE_PRECISION + fulfillFee)) / FULFILL_FEE_PRECISION;
+
+        // transfer request fee
+        if (_from != address(this)) {
+            require(weth.balanceOf(_from) >= reqFee, "insufficient request fee");
+            IERC20(weth).transferFrom(_from, _to, reqFee);
+        } else {
+            IERC20(weth).transfer(_to, reqFee);
         }
 
-        // calcualte req fee
-        uint256 reqFee = (tx.gasprice * _gasUsed * (FULFILL_FEE_PRECISION + fulfillFee)) / FULFILL_FEE_PRECISION;
-        IERC20(weth).transferFrom(_from, msg.sender, reqFee);
-
         emit TransferRequestFee(_reqId, _from, msg.sender, reqFee);
-    }
-
-    function paymentAvailable(address _owner) private view returns (bool) {
-        return ( 
-            weth.allowance(_owner, address(this)) > minFeeBalance && 
-            weth.balanceOf(_owner) > minFeeBalance
-        );
+        return reqFee;
     }
 
     // ------------------------------
@@ -421,6 +434,9 @@ contract TestUpgradeXOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeab
 
         // set status refund
         request.status = 3;
+
+        // refund request fee
+        IERC20(weth).transfer(request.owner, request.depositReqFee);
 
         emit RefundRequest(_reqId);
     }
@@ -480,9 +496,9 @@ contract TestUpgradeXOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeab
         emit SetFulfillFee(_fulfillFee);
     }
 
-    function setMinFeeBalance(uint256 _minFeeBalance) external onlyOwner {
-        minFeeBalance = _minFeeBalance;
-        emit SetMinFeeBalance(_minFeeBalance);
+    function setMinGasPrice(uint256 _minGasPrice) external onlyOwner {
+        minGasPrice = _minGasPrice;
+        emit SetMinGasPrice(_minGasPrice);
     }
 
     // ------------------------------
@@ -515,7 +531,7 @@ contract TestUpgradeXOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeab
     }
 
     // Test [4/4]: updated function
-    function getRequest(uint256 _reqId) external view returns (uint256, address, bytes memory, uint256, uint256, uint256, bool) {
+    function getRequest(uint256 _reqId) external view returns (uint256, address, bytes memory, uint256, uint256, uint256, uint256, uint256, uint256) {
         Request memory request = requests[_reqId];
         return (
             request.timestamp, 
@@ -523,8 +539,10 @@ contract TestUpgradeXOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeab
             request.payload, 
             request.status, 
             request.expiration, 
-            block.timestamp, // added current timestamp
-            paymentAvailable(request.owner)
+            request.maxGasPrice,
+            request.callbackGasLimit,
+            request.depositReqFee,
+            block.timestamp // added current timestamp
         );
     }
 }

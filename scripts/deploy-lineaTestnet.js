@@ -10,7 +10,7 @@ async function main() {
   const wethAddress = getContractAddress('weth')
 
   const fulfillFee = 3000 // 30%
-  const minFeeBalance = 0.02 * 10 ** 9
+  const minGasPrice = 0.5 * 10 ** 9
 
   const tokenIndexs = {
     BTC: 0,
@@ -105,7 +105,7 @@ async function main() {
 
   // set reqFee
   await sendTxn(xOracle.setFulfillFee(fulfillFee), `xOracle.setFulfillFee(${fulfillFee})`)
-  await sendTxn(xOracle.setMinFeeBalance(minFeeBalance), `xOracle.setMinFeeBalance(${minFeeBalance})`)
+  await sendTxn(xOracle.setMinGasPrice(minGasPrice), `xOracle.setMinGasPrice(${minGasPrice})`)
 
   // for upgrade proxy
   if (isMigrate) {

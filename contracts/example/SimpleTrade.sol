@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.18;
+pragma solidity 0.8.19;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface IXOracle {
-    function requestPrices(bytes memory payload, uint256 expiration) external payable returns (uint256);
+    function requestPrices(bytes memory payload, uint256 expiration, uint256 maxGasPrice, uint256 _callbackGasLimit) external payable returns (uint256);
     function cancelRequestPrice(uint256 _reqId) external;
     function xOracleCall(uint256 reqId, bool priceUpdate, bytes memory payload) external;
     function getLastPrice(uint256 tokenIndex) external view returns (uint256, uint256, uint256, uint256);
@@ -84,7 +84,10 @@ contract SimpleTrade {
         // make payload and call
         bool isOpenPosition = true;
         bytes memory payload = abi.encode(positionId, isOpenPosition);
-        uint256 reqId = IXOracle(xOracle).requestPrices(payload, 0); // with no expiration
+        uint256 expired = 0; // no expiration
+        uint256 maxGasPrice = 10e9; // 10 gwei
+        uint256 callbackMaxGasLimit = 5000000; // 5,000,000
+        uint256 reqId = IXOracle(xOracle).requestPrices(payload, expired, maxGasPrice, callbackMaxGasLimit);
 
         // optional for cross check
         requestMap[reqId] = positionId;
@@ -103,7 +106,10 @@ contract SimpleTrade {
         // make payload and call
         bool isOpenPosition = false;
         bytes memory payload = abi.encode(_positionId, isOpenPosition);
-        uint256 reqId = IXOracle(xOracle).requestPrices(payload, 0); // with no expiration
+        uint256 expired = 0; // no expiration
+        uint256 maxGasPrice = 10e9; // 10 gwei
+        uint256 callbackMaxGasLimit = 5000000; // 5,000,000
+        uint256 reqId = IXOracle(xOracle).requestPrices(payload, expired, maxGasPrice, callbackMaxGasLimit);
 
         // internal self-check (optional) 
         requestMap[reqId] = _positionId;

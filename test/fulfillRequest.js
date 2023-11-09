@@ -166,5 +166,6 @@ async function getRequest(reqID) {
     maxGasPrice: request[5],
     callbackGasLimit: request[6],
     depositReqFee: request[7],
+    fulfillFee: request[8],
   }
 }

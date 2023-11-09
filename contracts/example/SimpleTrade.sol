@@ -86,7 +86,7 @@ contract SimpleTrade {
         bytes memory payload = abi.encode(positionId, isOpenPosition);
         uint256 expired = 0; // no expiration
         uint256 maxGasPrice = 10e9; // 10 gwei
-        uint256 callbackMaxGasLimit = 5000000; // 5,000,000
+        uint256 callbackMaxGasLimit = 5000000; // 5M
         uint256 reqId = IXOracle(xOracle).requestPrices(payload, expired, maxGasPrice, callbackMaxGasLimit);
 
         // optional for cross check
@@ -108,7 +108,7 @@ contract SimpleTrade {
         bytes memory payload = abi.encode(_positionId, isOpenPosition);
         uint256 expired = 0; // no expiration
         uint256 maxGasPrice = 10e9; // 10 gwei
-        uint256 callbackMaxGasLimit = 5000000; // 5,000,000
+        uint256 callbackMaxGasLimit = 5000000; // 5M
         uint256 reqId = IXOracle(xOracle).requestPrices(payload, expired, maxGasPrice, callbackMaxGasLimit);
 
         // internal self-check (optional) 

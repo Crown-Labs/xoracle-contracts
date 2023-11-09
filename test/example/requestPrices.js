@@ -19,6 +19,7 @@ let weth
 let requestPrices
 const fulfillFee = 3000 // 30%
 const minGasPrice = 0.5 * 10 ** 9
+const minGasLimit = 1000000 // 1M
 
 describe('\n📌 ### Test Example: Request Prices ###\n', function () {
   before('Initial data', async function () {
@@ -73,6 +74,7 @@ describe('\n📌 ### Test Example: Request Prices ###\n', function () {
     // set reqFee
     await xOracle.setFulfillFee(fulfillFee)
     await xOracle.setMinGasPrice(minGasPrice)
+    await xOracle.setMinGasLimit(minGasLimit)
 
     const decimals = await xOracle.getDecimals(tokenIndexs.BTC)
     pricePrecision = 10 ** parseInt(decimals)
@@ -163,6 +165,7 @@ async function getRequest(reqID) {
     maxGasPrice: request[5],
     callbackGasLimit: request[6],
     depositReqFee: request[7],
+    fulfillFee: request[8],
   }
 }
 

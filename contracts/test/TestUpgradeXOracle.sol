@@ -38,6 +38,7 @@ contract TestUpgradeXOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeab
         uint256 maxGasPrice;
         uint256 callbackGasLimit;
         uint256 depositReqFee;
+        uint256 fulfillFee;
     }
     mapping(uint256 => Request) public requests;
     uint256 public reqId; // start with 1
@@ -46,6 +47,7 @@ contract TestUpgradeXOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeab
     IERC20 public weth; // payment with WETH
     uint256 public fulfillFee;
     uint256 public minGasPrice;
+    uint256 public minGasLimit;
 
     // price feed store
     mapping(uint256 => address) public priceFeedStores;
@@ -72,6 +74,7 @@ contract TestUpgradeXOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeab
     event SetOnlyWhitelist(bool flag);
     event SetFulfillFee(uint256 fulfillFee);
     event SetMinGasPrice(uint256 minGasPrice);
+    event SetMinGasLimit(uint256 minGasLimit);
 
     modifier onlyController() {
         require(controller[msg.sender], "controller: forbidden");
@@ -94,17 +97,25 @@ contract TestUpgradeXOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeab
     // ------------------------------
     // request
     // ------------------------------
-    function requestPrices(bytes memory _payload, uint256 _expiration, uint256 _maxGasPrice, uint256 _callbackGasLimit) external onlyContract whenNotPaused returns (uint256) { 
+    function requestPrices(
+        bytes memory _payload, 
+        uint256 _expiration, 
+        uint256 _maxGasPrice, 
+        uint256 _callbackGasLimit
+    ) external onlyContract whenNotPaused returns (uint256) { 
         // check allow all or only whitelist
         require(!onlyWhitelist || whitelists[msg.sender], "whitelist: forbidden");
 
         // check gas price
         require(_maxGasPrice >= minGasPrice, "gas price is too low");
 
-        // deposit request fee
-        uint256 reqFee = transferRequestFee(reqId, msg.sender, address(this), _callbackGasLimit, _maxGasPrice);
+        // check mininum gas limit
+        require(_callbackGasLimit > minGasLimit, "gas limit is too low");
 
         reqId++;
+
+        // deposit request fee
+        uint256 reqFee = transferRequestFee(reqId, msg.sender, address(this), _callbackGasLimit, _maxGasPrice, fulfillFee);
 
         // default expire time 
         if (_expiration < block.timestamp + MINIMUM_EXPIRE_TIME) {
@@ -120,7 +131,8 @@ contract TestUpgradeXOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeab
             expiration: _expiration,
             maxGasPrice: _maxGasPrice,
             callbackGasLimit: _callbackGasLimit,
-            depositReqFee: reqFee
+            depositReqFee: reqFee,
+            fulfillFee: fulfillFee
         });
         
         emit RequestPrices(reqId);
@@ -158,18 +170,17 @@ contract TestUpgradeXOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeab
         // capture gas used
         uint256 gasStart = gasleft();
 
-        // set price
+        // set price and collect gas used
         (bool priceUpdate, string memory message) = setPrices(request.timestamp, _data);
+        uint256 gasUsedSetprice = gasStart - gasleft();
 
-        // callback
-        xOracleCallback(request.owner, _reqId, priceUpdate, request.payload, request.callbackGasLimit);
-
-        // check gas used
+        // callback and collect gas used
+        xOracleCallback(request.owner, _reqId, priceUpdate, request.payload, request.callbackGasLimit - gasUsedSetprice);
         uint256 gasUsed = gasStart - gasleft();
-        require (gasUsed <= request.callbackGasLimit, "callbackGasLimit exceeded");
         
         // payment request fee
-        uint256 reqFee = transferRequestFee(_reqId, address(this), msg.sender, gasUsed, tx.gasprice);
+        uint256 reqFee = transferRequestFee(_reqId, address(this), msg.sender, gasUsed, tx.gasprice, request.fulfillFee);
+        require(request.depositReqFee >= reqFee, "reqFee exceed depositReqFee");
 
         // refund request fee
         if (request.depositReqFee > reqFee) {
@@ -397,13 +408,13 @@ contract TestUpgradeXOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeab
         return _timestamp & TIMESTAMP_BITMASK;
     }
 
-    function transferRequestFee(uint256 _reqId, address _from, address _to, uint256 _gasUsed, uint256 _gasPrice) private returns(uint256) {
-        if (fulfillFee == 0) {
+    function transferRequestFee(uint256 _reqId, address _from, address _to, uint256 _gasUsed, uint256 _gasPrice, uint256 _fulfillFee) private returns(uint256) {
+        if (_fulfillFee == 0) {
             return 0;
         }
-        
+
         // calculate request fee
-        uint256 reqFee = (_gasPrice * _gasUsed * (FULFILL_FEE_PRECISION + fulfillFee)) / FULFILL_FEE_PRECISION;
+        uint256 reqFee = (_gasPrice * _gasUsed * (FULFILL_FEE_PRECISION + _fulfillFee)) / FULFILL_FEE_PRECISION;
 
         // transfer request fee
         if (_from != address(this)) {
@@ -501,6 +512,11 @@ contract TestUpgradeXOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeab
         emit SetMinGasPrice(_minGasPrice);
     }
 
+    function setMinGasLimit(uint256 _minGasLimit) external onlyOwner {
+        minGasLimit = _minGasLimit;
+        emit SetMinGasLimit(_minGasLimit);
+    }
+
     // ------------------------------
     // view function
     // ------------------------------
@@ -531,7 +547,7 @@ contract TestUpgradeXOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeab
     }
 
     // Test [4/4]: updated function
-    function getRequest(uint256 _reqId) external view returns (uint256, address, bytes memory, uint256, uint256, uint256, uint256, uint256, uint256) {
+    function getRequest(uint256 _reqId) external view returns (uint256, address, bytes memory, uint256, uint256, uint256, uint256, uint256, uint256, uint256) {
         Request memory request = requests[_reqId];
         return (
             request.timestamp, 
@@ -542,6 +558,7 @@ contract TestUpgradeXOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeab
             request.maxGasPrice,
             request.callbackGasLimit,
             request.depositReqFee,
+            request.fulfillFee,
             block.timestamp // added current timestamp
         );
     }

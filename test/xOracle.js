@@ -30,7 +30,8 @@ let xOracle_proxy
 let weth
 let testOraclePrice
 const fulfillFee = 3000 // 30%
-const minFeeBalance = 0.02 * 10 ** 9
+const minGasPrice = 0.5 * 10 ** 9
+const minGasLimit = 1000000 // 1M
 
 describe('\n📌 ### Test xOracle ###\n', function () {
   before('Initial data', async function () {
@@ -85,7 +86,8 @@ describe('\n📌 ### Test xOracle ###\n', function () {
 
     // set reqFee
     await xOracle.setFulfillFee(fulfillFee)
-    await xOracle.setMinFeeBalance(minFeeBalance)
+    await xOracle.setMinGasPrice(minGasPrice)
+    await xOracle.setMinGasLimit(minGasLimit)
 
     // deploy TestOraclePrice Contract
     const TestOraclePrice = await ethers.getContractFactory('TestOraclePrice')
@@ -108,7 +110,8 @@ describe('\n📌 ### Test xOracle ###\n', function () {
     await expect(xOracle.connect(account).setWhitelist(account.address, true)).to.be.revertedWith(revert)
     await expect(xOracle.connect(account).setOnlyWhitelist(true)).to.be.revertedWith(revert)
     await expect(xOracle.connect(account).setFulfillFee(0)).to.be.revertedWith(revert)
-    await expect(xOracle.connect(account).setMinFeeBalance(0)).to.be.revertedWith(revert)
+    await expect(xOracle.connect(account).setMinGasPrice(0)).to.be.revertedWith(revert)
+    await expect(xOracle.connect(account).setMinGasLimit(0)).to.be.revertedWith(revert)
   })
 
   it('Test onlyController', async function () {
@@ -131,8 +134,8 @@ describe('\n📌 ### Test xOracle ###\n', function () {
     const [deployer, proxyAdmin, relayNode, user1, user2] = await ethers.getSigners()
     const account = [deployer, relayNode, user1, user2].at(random(4))
 
-    const revert = 'caller: only contrac'
-    await expect(xOracle.connect(account).requestPrices(0, 0)).to.be.revertedWith(revert)
+    const revert = 'caller: only contract'
+    await expect(xOracle.connect(account).requestPrices(0, 0, 1e9, 3000000)).to.be.revertedWith(revert)
   })
 
   it('Test Signer', async function () {
@@ -175,7 +178,9 @@ describe('\n📌 ### Test xOracle ###\n', function () {
 
     // try call with no fee balance
     const expireTime = 0
-    await expect(testOraclePrice.connect(user1).requestUpdatePrices(expireTime)).to.be.revertedWith('insufficient request fee')
+    const maxGasPrice = 10e9 // 10 gwei
+    const callbackGasLimit = 3000000
+    await expect(testOraclePrice.connect(user1).requestUpdatePrices(expireTime, maxGasPrice, callbackGasLimit)).to.be.revertedWith('insufficient request fee')
   })
 
   it('Test requestPrices', async function () {
@@ -187,15 +192,19 @@ describe('\n📌 ### Test xOracle ###\n', function () {
 
     // updatePrice
     const expireTime = 0
-    await testOraclePrice.connect(user1).requestUpdatePrices(expireTime)
+    const maxGasPrice = 10e9 // 10 gwei
+    const callbackGasLimit = 3000000
+    await testOraclePrice.connect(user1).requestUpdatePrices(expireTime, maxGasPrice, callbackGasLimit)
 
     const reqID = await xOracle.reqId() // last reqId (assume only one used)
     const request = await getRequest(reqID)
+    const afterFundBalance = await weth.balanceOf(testOraclePrice.address)
 
     // status 0 = request
     expect(request.owner).eq(testOraclePrice.address)
     expect(request.status).eq(0)
-    expect(request.paymentAvailable).eq(true)
+    expect(beforeFundBalance.sub(afterFundBalance)).to.eq(request.depositReqFee)
+    expect(request.fulfillFee).to.eq(fulfillFee)
 
     // simulate: next block time 120 sec
     await helpers.time.increase(120)
@@ -248,7 +257,9 @@ describe('\n📌 ### Test xOracle ###\n', function () {
     // make updatePrices
     for (let i = 0; i < count; i++) {
       const expireTime = 0
-      await testOraclePrice.connect(user1).requestUpdatePrices(expireTime)
+      const maxGasPrice = 10e9 // 10 gwei
+      const callbackGasLimit = 3000000
+      await testOraclePrice.connect(user1).requestUpdatePrices(expireTime, maxGasPrice, callbackGasLimit)
 
       const reqID = await xOracle.reqId() // last reqId (assume only one used)
       reqIDs.push(reqID)
@@ -312,7 +323,9 @@ describe('\n📌 ### Test xOracle ###\n', function () {
 
     // updatePrice
     const expireTime = 0
-    await testOraclePrice.connect(user1).requestUpdatePrices(expireTime)
+    const maxGasPrice = 10e9 // 10 gwei
+    const callbackGasLimit = 3000000
+    await testOraclePrice.connect(user1).requestUpdatePrices(expireTime, maxGasPrice, callbackGasLimit)
     const reqID = await xOracle.reqId() // last reqId (assume only one used)
 
     // simulate: next block time 3 sec
@@ -346,14 +359,16 @@ describe('\n📌 ### Test xOracle ###\n', function () {
     const [deployer, proxyAdmin, relayNode, user1, user2] = await ethers.getSigners()
 
     const expireTime = 0
-    await testOraclePrice.connect(user1).requestUpdatePrices(expireTime)
+    const maxGasPrice = 10e9 // 10 gwei
+    const callbackGasLimit = 3000000
+    await testOraclePrice.connect(user1).requestUpdatePrices(expireTime, maxGasPrice, callbackGasLimit)
     const reqID = await xOracle.reqId() // last reqId (assume only one used)
 
     // set setPause
     await xOracle.setPause(true)
 
     await expect(testOraclePrice.connect(user1).cancelRequest(reqID)).to.be.revertedWith('Pausable: paused')
-    await expect(testOraclePrice.connect(user1).requestUpdatePrices(expireTime)).to.be.revertedWith('Pausable: paused')
+    await expect(testOraclePrice.connect(user1).requestUpdatePrices(expireTime, maxGasPrice, callbackGasLimit)).to.be.revertedWith('Pausable: paused')
 
     // set setPause
     await xOracle.setPause(false)
@@ -363,23 +378,27 @@ describe('\n📌 ### Test xOracle ###\n', function () {
     const [deployer, proxyAdmin, relayNode, user1, user2] = await ethers.getSigners()
 
     const expireTime = 0
+    const maxGasPrice = 10e9
+    const callbackGasLimit = 3000000
 
     // set setOnlyWhitelist
     await xOracle.setOnlyWhitelist(true)
 
-    await expect(testOraclePrice.connect(user1).requestUpdatePrices(expireTime)).to.be.reverted
+    await expect(testOraclePrice.connect(user1).requestUpdatePrices(expireTime, maxGasPrice, callbackGasLimit)).to.be.reverted
 
     // add whitelist
     await xOracle.setWhitelist(testOraclePrice.address, true)
 
-    await expect(testOraclePrice.connect(user1).requestUpdatePrices(expireTime)).not.to.be.reverted
+    await expect(testOraclePrice.connect(user1).requestUpdatePrices(expireTime, maxGasPrice, callbackGasLimit)).not.to.be.reverted
   })
 
   it('Test expired time', async function () {
     const [deployer, proxyAdmin, relayNode, user1, user2] = await ethers.getSigners()
 
     const expireTime = (await getBlockTimestamp()) + 90 // expire arfer 90 sec
-    await testOraclePrice.connect(user1).requestUpdatePrices(expireTime)
+    const maxGasPrice = 10e9 // 10 gwei
+    const callbackGasLimit = 3000000
+    await testOraclePrice.connect(user1).requestUpdatePrices(expireTime, maxGasPrice, callbackGasLimit)
 
     // simulate: next block time 5 min
     await helpers.time.increase(5 * 60)
@@ -390,6 +409,24 @@ describe('\n📌 ### Test xOracle ###\n', function () {
     await expect(relayNodeFulfill(relayNode, reqID, prices, 1.5)).to.be.revertedWith('request is expired')
   })
 
+  it('Test gas price too low', async function () {
+    const [deployer, proxyAdmin, relayNode, user1, user2] = await ethers.getSigners()
+
+    const expireTime = 0
+    const maxGasPrice = 0.1 * 1e9 // 0.1 gwei
+    const callbackGasLimit = 3000000
+    await expect(testOraclePrice.connect(user1).requestUpdatePrices(expireTime, maxGasPrice, callbackGasLimit)).to.be.revertedWith('gas price is too low')
+  })
+
+  it('Test callback gas limit', async function () {
+    const [deployer, proxyAdmin, relayNode, user1, user2] = await ethers.getSigners()
+
+    const expireTime = 0
+    const maxGasPrice = 1e9 // 1 gwei
+    const callbackGasLimit = 500000 // 500k
+    await expect(testOraclePrice.connect(user1).requestUpdatePrices(expireTime, maxGasPrice, callbackGasLimit)).to.be.revertedWith('gas limit is too low')
+  })
+
   it('Test refundRequest', async function () {
     const [deployer, proxyAdmin, relayNode, user1, user2] = await ethers.getSigners()
 
@@ -397,24 +434,19 @@ describe('\n📌 ### Test xOracle ###\n', function () {
     const beforeRelayNodeBalance = await weth.balanceOf(relayNode.address)
 
     const expireTime = (await getBlockTimestamp()) + 90 // expire arfer 90 sec
-    await testOraclePrice.connect(user1).requestUpdatePrices(expireTime)
+    const maxGasPrice = 10e9 // 10 gwei
+    const callbackGasLimit = 3000000
+    await testOraclePrice.connect(user1).requestUpdatePrices(expireTime, maxGasPrice, callbackGasLimit)
 
-    // simulate: next block time 5 min
-    await helpers.time.increase(5 * 60)
-
-    // simulate: received emit request
+    // simulate relayNode fulfill request
     const reqID = await xOracle.reqId() // last reqId (assume only one used)
-    await xOracle.connect(relayNode).refundRequest(reqID)
+    const request = await getRequest(reqID)
+    const timestamp = request.timestamp.toString()
+    const data = await makePricefeedData(1.5, timestamp)
+    const dataDuplicate = [...data, ...data]
 
-    // check status 3 = refund
-    expect((await xOracle.getRequest(reqID))[3]).to.eq(3)
-
-    // check req fee
-    const fundBalance = await weth.balanceOf(testOraclePrice.address)
-    const relayNodeBalance = await weth.balanceOf(relayNode.address)
-
-    expect(beforeFundBalance).to.eq(fundBalance)
-    expect(beforeRelayNodeBalance).to.eq(relayNodeBalance)
+    const tx = await xOracle.connect(relayNode).fulfillRequest(dataDuplicate, reqID)
+    await expect(tx).to.emit(xOracle, 'FulfillRequest').withArgs(reqID, false, 'setPrices: signer duplicate')
   })
 
   it('Test adminRefundRequest', async function () {
@@ -424,7 +456,9 @@ describe('\n📌 ### Test xOracle ###\n', function () {
     const beforeRelayNodeBalance = await weth.balanceOf(relayNode.address)
 
     const expireTime = (await getBlockTimestamp()) + 90 // expire arfer 90 sec
-    await testOraclePrice.connect(user1).requestUpdatePrices(expireTime)
+    const maxGasPrice = 10e9 // 10 gwei
+    const callbackGasLimit = 3000000
+    await testOraclePrice.connect(user1).requestUpdatePrices(expireTime, maxGasPrice, callbackGasLimit)
 
     // simulate: next block time 5 min
     await helpers.time.increase(5 * 60)
@@ -445,7 +479,9 @@ describe('\n📌 ### Test xOracle ###\n', function () {
     const [deployer, proxyAdmin, relayNode, user1, user2] = await ethers.getSigners()
 
     const expireTime = (await getBlockTimestamp()) + 90 // expire arfer 90 sec
-    await testOraclePrice.connect(user1).requestUpdatePrices(expireTime)
+    const maxGasPrice = 10e9 // 10 gwei
+    const callbackGasLimit = 3000000
+    await testOraclePrice.connect(user1).requestUpdatePrices(expireTime, maxGasPrice, callbackGasLimit)
 
     // simulate relayNode fulfill request
     const reqID = await xOracle.reqId() // last reqId (assume only one used)
@@ -470,7 +506,9 @@ describe('\n📌 ### Test xOracle ###\n', function () {
 
     // updatePrice
     const expireTime = 0
-    await testOraclePrice.connect(user1).requestUpdatePrices(expireTime)
+    const maxGasPrice = 10e9 // 10 gwei
+    const callbackGasLimit = 3000000
+    await testOraclePrice.connect(user1).requestUpdatePrices(expireTime, maxGasPrice, callbackGasLimit)
 
     // simulate relayNode fulfill request
     const reqID = await xOracle.reqId() // last reqId (assume only one used)
@@ -498,7 +536,9 @@ describe('\n📌 ### Test xOracle ###\n', function () {
     for (const test of testCase) {
       // updatePrice
       const expireTime = 0
-      await testOraclePrice.connect(user1).requestUpdatePrices(expireTime)
+      const maxGasPrice = 10e9 // 10 gwei
+      const callbackGasLimit = 3000000
+      await testOraclePrice.connect(user1).requestUpdatePrices(expireTime, maxGasPrice, callbackGasLimit)
 
       const reqID = await xOracle.reqId() // last reqId (assume only one used)
       const request = await getRequest(reqID)
@@ -525,7 +565,9 @@ describe('\n📌 ### Test xOracle ###\n', function () {
 
     // updatePrice
     const expireTime = 0
-    await testOraclePrice.connect(user1).requestUpdatePrices(expireTime)
+    const maxGasPrice = 10e9 // 10 gwei
+    const callbackGasLimit = 3000000
+    await testOraclePrice.connect(user1).requestUpdatePrices(expireTime, maxGasPrice, callbackGasLimit)
 
     const balance1 = await ethers.provider.getBalance(relayNode.address)
 
@@ -607,7 +649,9 @@ describe('\n📌 ### Test xOracle ###\n', function () {
     {
       // updatePrice
       const expireTime = 0
-      const tx = await testOraclePrice.connect(user1).requestUpdatePrices(expireTime)
+      const maxGasPrice = 10e9 // 10 gwei
+      const callbackGasLimit = 3000000
+      const tx = await testOraclePrice.connect(user1).requestUpdatePrices(expireTime, maxGasPrice, callbackGasLimit)
 
       reqID = await xOracle.reqId() // last reqId (assume only one used)
       let request = await xOracle.getRequest(reqID)
@@ -617,9 +661,14 @@ describe('\n📌 ### Test xOracle ###\n', function () {
         payload: request[2],
         status: request[3],
         expiration: request[4],
-        block_timestamp: request[5],
-        paymentAvailable: request[6],
+        maxGasPrice: request[5],
+        callbackGasLimit: request[6],
+        depositReqFee: request[7],
+        fulfillFee: request[8],
+        block_timestamp: request[9],
       }
+
+      expect(request.maxGasPrice).eq(maxGasPrice)
 
       const block1 = await ethers.provider.getBlock(tx.blockNumber)
       expect(request.block_timestamp).eq(block1.timestamp)
@@ -652,7 +701,7 @@ describe('\n📌 ### Test xOracle ###\n', function () {
       }
     }
 
-    // proxy downgrade previus logic
+    // proxy downgrade previous logic
     await xOracle_proxy.connect(proxyAdmin).upgradeTo(xOracle_logic.address)
     xOracle = await XOracle.attach(xOracle_proxy.address)
 
@@ -762,7 +811,10 @@ async function getRequest(reqID) {
     payload: request[2],
     status: request[3],
     expiration: request[4],
-    paymentAvailable: request[5],
+    maxGasPrice: request[5],
+    callbackGasLimit: request[6],
+    depositReqFee: request[7],
+    fulfillFee: request[8],
   }
 }
 

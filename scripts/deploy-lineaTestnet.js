@@ -10,7 +10,8 @@ async function main() {
   const wethAddress = getContractAddress('weth')
 
   const fulfillFee = 3000 // 30%
-  const minFeeBalance = 0.02 * 10 ** 9
+  const minGasPrice = 0.5 * 10 ** 9
+  const minGasLimit = 1000000 // 1M
 
   const tokenIndexs = {
     BTC: 0,
@@ -55,8 +56,22 @@ async function main() {
     xOracle = await contractAt('XOracle', xOracle_proxy.address, deployer)
     await xOracle.initialize(wethAddress)
   } else {
-    // to upgrade proxy in end for script
+    // for upgrade proxy
     xOracle = await contractAt('XOracle', getContractAddress('xOracle'), deployer)
+
+    // switch to proxyAdmin
+    await switchSigner(proxyAdmin)
+    // use frame signer and reload deployer
+    const proxyAdminSigner = await getFrameSigner()
+
+    // proxy upgrade new logic
+    const xOracle_proxy = await contractAt('AdminUpgradeabilityProxy', getContractAddress('xOracle'), proxyAdminSigner)
+    await sendTxn(xOracle_proxy.upgradeTo(xOracle_logic.address), `xOracle.upgradeTo(${xOracle_logic.address})`)
+
+    // switch to deployer
+    await switchSigner(`deployer`)
+    // use frame signer and reload deployer
+    deployer = await getFrameSigner()
   }
 
   // PriceFeedStore
@@ -105,20 +120,8 @@ async function main() {
 
   // set reqFee
   await sendTxn(xOracle.setFulfillFee(fulfillFee), `xOracle.setFulfillFee(${fulfillFee})`)
-  await sendTxn(xOracle.setMinFeeBalance(minFeeBalance), `xOracle.setMinFeeBalance(${minFeeBalance})`)
-
-  // for upgrade proxy
-  if (isMigrate) {
-    // switch to proxyAdmin
-    await switchSigner(proxyAdmin)
-
-    // proxy upgrade new logic
-    const xOracle_proxy = await contractAt('AdminUpgradeabilityProxy', getContractAddress('xOracle'), deployer)
-    await sendTxn(xOracle_proxy.upgradeTo(xOracle_logic.address), `xOracle.upgradeTo(${xOracle_logic.address})`)
-
-    // switch to deployer
-    await switchSigner(`deployer`)
-  }
+  await sendTxn(xOracle.setMinGasPrice(minGasPrice), `xOracle.setMinGasPrice(${minGasPrice})`)
+  await sendTxn(xOracle.setMinGasLimit(minGasLimit), `xOracle.setMinGasLimit(${minGasLimit})`)
 }
 
 async function switchSigner(address) {

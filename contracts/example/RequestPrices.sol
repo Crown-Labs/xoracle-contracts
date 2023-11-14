@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.18;
+pragma solidity 0.8.19;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface IXOracle {
-    function requestPrices(bytes memory payload, uint256 expiration) external payable returns (uint256);
+    function requestPrices(bytes memory payload, uint256 expiration, uint256 maxGasPrice, uint256 _callbackGasLimit) external payable returns (uint256);
     function xOracleCall(uint256 reqId, bool priceUpdate, bytes memory payload) external;
     function getLastPrice(uint256 tokenIndex) external view returns (uint256, uint256, uint256, uint256);
 }
@@ -36,8 +36,10 @@ contract RequestPrices {
 
         // make payload and call
         bytes memory payload = ""; // no payload
-        uint256 expiration = 0; // no expired
-        IXOracle(xOracle).requestPrices(payload, expiration);
+        uint256 expired = 0; // no expiration
+        uint256 maxGasPrice = 10e9; // 10 gwei
+        uint256 callbackMaxGasLimit = 5000000; // 5M
+        IXOracle(xOracle).requestPrices(payload, expired, maxGasPrice, callbackMaxGasLimit);
     }
 
     // ------------------------------

@@ -3,7 +3,7 @@ const { config } = require('../config')
 const readline = require('readline')
 
 async function main() {
-  const deployer = await getFrameSigner()
+  let deployer = await getFrameSigner()
   const proxyAdmin = config.proxyAdmin
   const relayNodes = config.relayNodes
   const pricefeedSigners = config.pricefeedSigners
@@ -45,6 +45,7 @@ async function main() {
   // deploy logic
   const xOracle_logic = await deployContract('XOracle', [], 'XOracle_logic', deployer)
   // const xOracle_logic = await contractAt("XOracle", getContractAddress("xOracle_logic"), deployer);
+  // xOracle = await contractAt('XOracle', getContractAddress('xOracle'), deployer);
 
   // xOracle
   if (!isMigrate) {

@@ -17,7 +17,7 @@ async function main() {
     BTC: 0,
     ETH: 1,
     BNB: 2,
-    // USDT: 3,
+    USDT: 3,
     BUSD: 4,
     USDC: 5,
     // DAI: 6,

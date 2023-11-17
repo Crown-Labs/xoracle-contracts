@@ -3,7 +3,7 @@ const { config } = require('../config')
 const readline = require('readline')
 
 async function main() {
-  const deployer = await getFrameSigner()
+  let deployer = await getFrameSigner()
   const proxyAdmin = config.proxyAdmin
   const relayNodes = config.relayNodes
   const pricefeedSigners = config.pricefeedSigners
@@ -43,36 +43,37 @@ async function main() {
   const isMigrate = true
 
   // deploy logic
-  const xOracle_logic = await deployContract('XOracle', [], 'XOracle_logic', deployer)
-  // const xOracle_logic = await contractAt("XOracle", getContractAddress("xOracle_logic"), deployer);
+  // const xOracle_logic = await deployContract('XOracle', [], 'XOracle_logic', deployer)
+  const xOracle_logic = await contractAt("XOracle", getContractAddress("xOracle_logic"), deployer);
+  xOracle = await contractAt('XOracle', getContractAddress('xOracle'), deployer);
 
   // xOracle
-  if (!isMigrate) {
-    // deploy proxy
-    const xOracle_proxy = await deployContract('AdminUpgradeabilityProxy', [xOracle_logic.address, proxyAdmin, '0x'], 'XOracle', deployer)
-    // const xOracle_proxy = await contractAt("XOracle", getContractAddress("xOracle"), deployer);
+  // if (!isMigrate) {
+  //   // deploy proxy
+  //   const xOracle_proxy = await deployContract('AdminUpgradeabilityProxy', [xOracle_logic.address, proxyAdmin, '0x'], 'XOracle', deployer)
+  //   // const xOracle_proxy = await contractAt("XOracle", getContractAddress("xOracle"), deployer);
 
-    // initialize
-    xOracle = await contractAt('XOracle', xOracle_proxy.address, deployer)
-    await xOracle.initialize(wethAddress)
-  } else {
-    // for upgrade proxy
-    xOracle = await contractAt('XOracle', getContractAddress('xOracle'), deployer)
+  //   // initialize
+  //   xOracle = await contractAt('XOracle', xOracle_proxy.address, deployer)
+  //   await xOracle.initialize(wethAddress)
+  // } else {
+  //   // for upgrade proxy
+  //   xOracle = await contractAt('XOracle', getContractAddress('xOracle'), deployer)
 
-    // switch to proxyAdmin
-    await switchSigner(proxyAdmin)
-    // use frame signer and reload deployer
-    const proxyAdminSigner = await getFrameSigner()
+  //   // switch to proxyAdmin
+  //   await switchSigner(proxyAdmin)
+  //   // use frame signer and reload deployer
+  //   const proxyAdminSigner = await getFrameSigner()
 
-    // proxy upgrade new logic
-    const xOracle_proxy = await contractAt('AdminUpgradeabilityProxy', getContractAddress('xOracle'), proxyAdminSigner)
-    await sendTxn(xOracle_proxy.upgradeTo(xOracle_logic.address), `xOracle.upgradeTo(${xOracle_logic.address})`)
+  //   // proxy upgrade new logic
+  //   const xOracle_proxy = await contractAt('AdminUpgradeabilityProxy', getContractAddress('xOracle'), proxyAdminSigner)
+  //   await sendTxn(xOracle_proxy.upgradeTo(xOracle_logic.address), `xOracle.upgradeTo(${xOracle_logic.address})`)
 
-    // switch to deployer
-    await switchSigner(`deployer`)
-    // use frame signer and reload deployer
-    deployer = await getFrameSigner()
-  }
+  //   // switch to deployer
+  //   await switchSigner(`deployer`)
+  //   // use frame signer and reload deployer
+  //   deployer = await getFrameSigner()
+  // }
 
   // PriceFeedStore
   if (!isMigrate) {

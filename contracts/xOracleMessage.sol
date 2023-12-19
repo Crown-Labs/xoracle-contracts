@@ -58,9 +58,12 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
         chainId = uint64(block.chainid);
     }
 
-    // ------------------------------
-    // send message
-    // ------------------------------
+    /**
+     * @dev Send message to destination chain
+     * @param _payload payload to calldata to endpoint
+     * @param _endpoint endpoint address on destination chain
+     * @param _dstChainId destination chain id
+     */ 
     function sendMessage(bytes memory _payload, address _endpoint, uint64 _dstChainId) external onlyContract whenNotPaused {
         // check allow all or only whitelist
         require(!onlyWhitelist || whitelists[msg.sender], "whitelist: forbidden");
@@ -76,9 +79,16 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
         emit SendMessage(nonce, _payload, _endpoint, chainId, _dstChainId);
     }
 
-    // ------------------------------
-    // fulfill message
-    // ------------------------------
+    /**
+     * @dev Fulfill message on destination chain
+     * @param _nonce source chain nonce
+     * @param _payload payload to calldata to endpoint
+     * @param _endpoint endpoint address on destination chain
+     * @param _srcChainId source chain id
+     * @param _dstChainId destination chain id
+     * @param _srcTxHash source transaction hash
+     * @param _signatures An array of signature of the messageHash
+     */
     function fulfillMessage(
         uint256 _nonce,
         bytes memory _payload, 
@@ -86,7 +96,7 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
         uint64 _srcChainId, 
         uint64 _dstChainId, 
         bytes32 _srcTxHash,
-        bytes[] memory signatures
+        bytes[] memory _signatures
     ) external onlyController {
         require(_payload.length > 0, "payload invalid");
         require(_endpoint != address(0), "endpoint invalid");
@@ -100,7 +110,7 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
         fulfillMessageHashes[messageHash] = true;
 
         // verify signatures
-        verifySignatures(messageHash, signatures);
+        verifySignatures(messageHash, _signatures);
 
         // callback and collect gas used
         xOracleCallback(messageHash, _payload, _endpoint);

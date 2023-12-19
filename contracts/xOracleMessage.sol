@@ -12,11 +12,12 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
     uint64 public chainId;
 
     // message nonce
-    uint256 public sendMessageNonce;
-    uint256 public fulfillMessageNonce;
+    uint256 public nonce;
 
     // fulfilled message hash
     mapping(bytes32 => bool) public fulfillMessageHashes;
+
+    mapping(bytes32 => bytes32) public sendMessageNonceHashes; // nonceHash => messageHash
 
     // controller
     mapping(address => bool) public controller;
@@ -34,7 +35,7 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
     event SendMessage(uint256 indexed nonce, bytes payload, address receiver, uint64 srcChainId, uint64 dstChainId);
     event FulfillMessage(uint256 indexed nonce, bytes payload, address receiver, uint64 srcChainId, uint64 dstChainId, bytes32 srcTxHash);
     event XOracleCall(bytes32 indexed messageHash, bool success, string result);
-    event SetMessageNonce(uint256 sendMessageNonce, uint256 fulfillMessageNonce);
+    event SetNonce(uint256 nonce);
     event SetController(address controller, bool flag);
     event SetSigner(address signer, bool flag);
     event SetThreshold(uint256 threshold);
@@ -51,12 +52,10 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
         _;
     }
 
-    function initialize(uint64 _chainId) external initializer {
+    function initialize() external initializer {
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();
-
-        require(_chainId > 0, "chainId invalid");
-        chainId = _chainId;
+        chainId = uint64(block.chainid);
     }
 
     // ------------------------------
@@ -72,15 +71,16 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
         require(_dstChainId != chainId, "dstChainId invalid");
 
         // increase nonce
-        sendMessageNonce++;
+        nonce++;
 
-        emit SendMessage(sendMessageNonce, _payload, _receiver, chainId, _dstChainId);
+        emit SendMessage(nonce, _payload, _receiver, chainId, _dstChainId);
     }
 
     // ------------------------------
     // fulfill message
     // ------------------------------
     function fulfillMessage(
+        uint256 _nonce,
         bytes memory _payload, 
         address _receiver, 
         uint64 _srcChainId, 
@@ -90,16 +90,14 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
     ) external onlyController {
         require(_payload.length > 0, "payload invalid");
         require(_receiver != address(0), "receiver invalid");
+        require(_srcChainId != _dstChainId, "invalid chainId");
         require(_dstChainId == chainId, "dstChainId invalid");
 
-        bytes32 messageHash = getMessageHash(_payload, _receiver, _srcChainId, _dstChainId, _srcTxHash);
+        bytes32 messageHash = getMessageHash(_nonce, _payload, _receiver, _srcChainId, _dstChainId, _srcTxHash);
         require(fulfillMessageHashes[messageHash] == false, "messageHash already fulfilled");
 
         // save messageHash
         fulfillMessageHashes[messageHash] = true;
-
-        // increase nonce
-        fulfillMessageNonce++;
 
         // verify signatures
         verifySignatures(messageHash, signatures);
@@ -107,7 +105,7 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
         // callback and collect gas used
         xOracleCallback(messageHash, _payload, _receiver);
 
-        emit FulfillMessage(fulfillMessageNonce, _payload, _receiver, _srcChainId, _dstChainId, _srcTxHash);
+        emit FulfillMessage(_nonce, _payload, _receiver, _srcChainId, _dstChainId, _srcTxHash);
     }
 
     // ------------------------------
@@ -154,10 +152,9 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
     // ------------------------------
     // onlyOwner
     // ------------------------------
-    function setMessageNonce(uint256 _sendMessageNonce, uint256 _fulfillMessageNonce) external onlyOwner {
-        sendMessageNonce = _sendMessageNonce;
-        fulfillMessageNonce = _fulfillMessageNonce;
-        emit SetMessageNonce(_sendMessageNonce, _fulfillMessageNonce);
+    function setNonce(uint256 _nonce) external onlyOwner {
+        nonce = _nonce;
+        emit SetNonce(_nonce);
     }
 
     function setPause(bool _flag) external onlyOwner {
@@ -206,20 +203,21 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
     // view function
     // ------------------------------
     function getMessageHash(
-        bytes memory _payload, 
+        uint256 _nonce,
+        bytes memory _payload,
         address _receiver,
         uint64 _srcChainId, 
         uint64 _dstChainId, 
         bytes32 _srcTxHash
     ) public pure returns (bytes32) {
-        return keccak256(abi.encode(_payload, _receiver, _srcChainId, _dstChainId, _srcTxHash));
-    }
-
-    function getMessageNonce() external view returns (uint256, uint256) {
-        return (sendMessageNonce, fulfillMessageNonce);
+        return keccak256(abi.encode(_nonce, _payload, _receiver, _srcChainId, _dstChainId, _srcTxHash));
     }
 
     function getMessageHashFulfilled(bytes32 _messageHash) external view returns (bool) {
         return fulfillMessageHashes[_messageHash];
+    }
+
+    function getNonce() external view returns (uint256) {
+        return nonce;
     }
 }

@@ -32,8 +32,8 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
     bool public onlyWhitelist;
 
     // events
-    event SendMessage(uint256 indexed nonce, bytes payload, address receiver, uint64 srcChainId, uint64 dstChainId);
-    event FulfillMessage(uint256 indexed nonce, bytes payload, address receiver, uint64 srcChainId, uint64 dstChainId, bytes32 srcTxHash);
+    event SendMessage(uint256 indexed nonce, bytes payload, address endpoint, uint64 srcChainId, uint64 dstChainId);
+    event FulfillMessage(uint256 indexed nonce, bytes payload, address endpoint, uint64 srcChainId, uint64 dstChainId, bytes32 srcTxHash);
     event XOracleCall(bytes32 indexed messageHash, bool success, string result);
     event SetNonce(uint256 nonce);
     event SetController(address controller, bool flag);
@@ -61,19 +61,19 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
     // ------------------------------
     // send message
     // ------------------------------
-    function sendMessage(bytes memory _payload, address _receiver, uint64 _dstChainId) external onlyContract whenNotPaused {
+    function sendMessage(bytes memory _payload, address _endpoint, uint64 _dstChainId) external onlyContract whenNotPaused {
         // check allow all or only whitelist
         require(!onlyWhitelist || whitelists[msg.sender], "whitelist: forbidden");
         
         // check params
         require(_payload.length > 0, "payload invalid");
-        require(_receiver != address(0), "receiver invalid");
+        require(_endpoint != address(0), "endpoint invalid");
         require(_dstChainId != chainId, "dstChainId invalid");
 
         // increase nonce
         nonce++;
 
-        emit SendMessage(nonce, _payload, _receiver, chainId, _dstChainId);
+        emit SendMessage(nonce, _payload, _endpoint, chainId, _dstChainId);
     }
 
     // ------------------------------
@@ -82,18 +82,18 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
     function fulfillMessage(
         uint256 _nonce,
         bytes memory _payload, 
-        address _receiver, 
+        address _endpoint, 
         uint64 _srcChainId, 
         uint64 _dstChainId, 
         bytes32 _srcTxHash,
         bytes[] memory signatures
     ) external onlyController {
         require(_payload.length > 0, "payload invalid");
-        require(_receiver != address(0), "receiver invalid");
+        require(_endpoint != address(0), "endpoint invalid");
         require(_srcChainId != _dstChainId, "invalid chainId");
         require(_dstChainId == chainId, "dstChainId invalid");
 
-        bytes32 messageHash = getMessageHash(_nonce, _payload, _receiver, _srcChainId, _dstChainId, _srcTxHash);
+        bytes32 messageHash = getMessageHash(_nonce, _payload, _endpoint, _srcChainId, _dstChainId, _srcTxHash);
         require(fulfillMessageHashes[messageHash] == false, "messageHash already fulfilled");
 
         // save messageHash
@@ -103,9 +103,9 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
         verifySignatures(messageHash, signatures);
 
         // callback and collect gas used
-        xOracleCallback(messageHash, _payload, _receiver);
+        xOracleCallback(messageHash, _payload, _endpoint);
 
-        emit FulfillMessage(_nonce, _payload, _receiver, _srcChainId, _dstChainId, _srcTxHash);
+        emit FulfillMessage(_nonce, _payload, _endpoint, _srcChainId, _dstChainId, _srcTxHash);
     }
 
     // ------------------------------
@@ -205,12 +205,12 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
     function getMessageHash(
         uint256 _nonce,
         bytes memory _payload,
-        address _receiver,
+        address _endpoint,
         uint64 _srcChainId, 
         uint64 _dstChainId, 
         bytes32 _srcTxHash
     ) public pure returns (bytes32) {
-        return keccak256(abi.encode(_nonce, _payload, _receiver, _srcChainId, _dstChainId, _srcTxHash));
+        return keccak256(abi.encode(_nonce, _payload, _endpoint, _srcChainId, _dstChainId, _srcTxHash));
     }
 
     function getMessageHashFulfilled(bytes32 _messageHash) external view returns (bool) {

@@ -38,10 +38,6 @@ describe('\n📌 ### Test xOracle Message ###\n', function () {
     for (i = 0; i < signers.length; i++) {
       await xOracleMessage.setSigner(signers[i].publicAddress, true)
     }
-
-    // deploy TestOraclePrice Contract
-    // const TestOraclePrice = await ethers.getContractFactory('TestOraclePrice')
-    // testOraclePrice = await TestOraclePrice.deploy(xOracleMessage.address, weth.address, Object.keys(symbol))
   })
 
   it('Test onlyOwner', async function () {

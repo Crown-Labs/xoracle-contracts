@@ -64,7 +64,7 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
      * @param _endpoint endpoint address on destination chain
      * @param _dstChainId destination chain id
      */ 
-    function sendMessage(bytes memory _payload, address _endpoint, uint64 _dstChainId) external onlyContract whenNotPaused {
+    function sendMessage(bytes memory _payload, address _endpoint, uint64 _dstChainId) external onlyContract whenNotPaused returns (uint256) {
         // check allow all or only whitelist
         require(!onlyWhitelist || whitelists[msg.sender], "whitelist: forbidden");
         
@@ -77,6 +77,7 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
         nonce++;
 
         emit SendMessage(nonce, _payload, _endpoint, chainId, _dstChainId);
+        return nonce;
     }
 
     /**

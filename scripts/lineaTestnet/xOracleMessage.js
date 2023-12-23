@@ -18,7 +18,7 @@ async function main() {
   const isMigrate = false
 
   // deploy logic
-  const xOracleMessage_logic = await deployContract('XOracleMessage', [], 'xOracleMessage_logic', deployer)
+  const xOracleMessage_logic = await deployContract('XOracleMessage', [], 'XOracleMessage_logic', deployer)
   // const xOracleMessage_logic = await contractAt("XOracleMessage", getContractAddress("xOracleMessage_logic"), deployer);
   // xOracleMessage = await contractAt('XOracleMessage', getContractAddress('xOracleMessage'), deployer);
 
@@ -28,7 +28,7 @@ async function main() {
     feeController = await deployContract('FeeController', [], 'FeeController', deployer)
 
     // deploy proxy
-    const xOracleMessage_proxy = await deployContract('AdminUpgradeabilityProxy', [xOracleMessage_logic.address, proxyAdmin, '0x'], 'XOracle', deployer)
+    const xOracleMessage_proxy = await deployContract('AdminUpgradeabilityProxy', [xOracleMessage_logic.address, proxyAdmin, '0x'], 'XOracleMessage', deployer)
     // const xOracleMessage_proxy = await contractAt("XOracleMessage", getContractAddress("xOracleMessage"), deployer);
 
     // initialize

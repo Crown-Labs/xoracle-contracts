@@ -1,5 +1,5 @@
-const { deployContract, contractAt, getContractAddress, sendTxn, getFrameSigner } = require('./lib/deploy')
-const { config } = require('../config')
+const { deployContract, contractAt, getContractAddress, sendTxn, getFrameSigner } = require('../lib/deploy')
+const { config } = require('../../config')
 const readline = require('readline')
 
 async function main() {

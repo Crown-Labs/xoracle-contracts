@@ -11,7 +11,11 @@ const config = {
     '0x78a3421C4f2755CBaFe54d65856F9Dc223c3D42b',
     '0x3018A56c5cD12281C7E1C544Dba26492daE06601',
   ],
+  messengerSigners: [
+    
+  ],
   relayNodes: ['0x9642955e650f8F380e9e5f978C910D684b7a0805', '0xE49EE57521a4eDF93Cb62013CF5B263660b3dD79'],
+  feeReceiver: '0xdDd982ea649D6aeEbF2Cc68fe4c2EB953330363f',
   // tokens
   tokens: {
     59140: {

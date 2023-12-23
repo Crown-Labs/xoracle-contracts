@@ -6,6 +6,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./interfaces/IFeeController.sol";
 
 contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
     // deployed chain id
@@ -16,7 +17,6 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
 
     // fulfilled message hash
     mapping(bytes32 => bool) public fulfillMessageHashes;
-
     mapping(bytes32 => bytes32) public sendMessageNonceHashes; // nonceHash => messageHash
 
     // controller
@@ -31,6 +31,10 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
     mapping(address => bool) public whitelists;
     bool public onlyWhitelist;
 
+    // fee
+    address public feeController;
+    address public feeReceiver;
+
     // events
     event SendMessage(uint256 indexed nonce, bytes payload, address endpoint, uint64 srcChainId, uint64 dstChainId);
     event FulfillMessage(uint256 indexed nonce, bytes payload, address endpoint, uint64 srcChainId, uint64 dstChainId, bytes32 srcTxHash);
@@ -41,6 +45,8 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
     event SetThreshold(uint256 threshold);
     event SetWhitelist(address whitelist, bool flag);
     event SetOnlyWhitelist(bool flag);
+    event SetFeeController(address indexed feeController);
+    event SetFeeReceiver(address indexed feeReceiver);
 
     modifier onlyController() {
         require(controller[msg.sender], "controller: forbidden");
@@ -52,10 +58,15 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
         _;
     }
 
-    function initialize() external initializer {
+    function initialize(address _feeController, address _feeReceiver) external initializer {
+        require(_feeController != address(0), "invalid address");
+        require(_feeReceiver != address(0), "invalid address");
+
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();
         chainId = uint64(block.chainid);
+        feeController = _feeController;
+        feeReceiver = _feeReceiver;
     }
 
     /**
@@ -210,6 +221,18 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
         emit SetOnlyWhitelist(_flag);
     }
 
+    function setFeeController(address _feeController) external onlyOwner() {
+        require(_feeController != address(0), "invalid address");
+        feeController = _feeController;
+        emit SetFeeController(_feeController);
+    }
+
+    function setFeeReceiver(address _feeReceiver) external onlyOwner() {
+        require(_feeReceiver != address(0), "invalid address");
+        feeReceiver = _feeReceiver;
+        emit SetFeeReceiver(_feeReceiver);
+    }
+
     // ------------------------------
     // view function
     // ------------------------------
@@ -230,5 +253,9 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
 
     function getNonce() external view returns (uint256) {
         return nonce;
+    }
+
+    function getFee(uint64 _dstChainId) external view returns(uint256) {
+        return IFeeController(feeController).getFee(chainId, _dstChainId);
     }
 }

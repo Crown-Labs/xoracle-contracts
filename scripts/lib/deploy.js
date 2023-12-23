@@ -79,7 +79,7 @@ async function contractAt(name, address, provider) {
 function getChainId(network) {
   const chainId = networkId[network]
   if (!chainId) {
-    throw new Error('Unsupported network')
+    throw new Error(`Unsupported network ${network}`)
   }
   return chainId
 }

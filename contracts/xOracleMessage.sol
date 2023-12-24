@@ -75,7 +75,7 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
      * @param _endpoint endpoint address on destination chain
      * @param _dstChainId destination chain id
      */ 
-    function sendMessage(bytes memory _payload, address _endpoint, uint64 _dstChainId) external onlyContract whenNotPaused returns (uint256) {
+    function sendMessage(bytes memory _payload, address _endpoint, uint64 _dstChainId) external payable onlyContract whenNotPaused returns (uint256) {
         // check allow all or only whitelist
         require(!onlyWhitelist || whitelists[msg.sender], "whitelist: forbidden");
         
@@ -83,6 +83,16 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
         require(_payload.length > 0, "payload invalid");
         require(_endpoint != address(0), "endpoint invalid");
         require(_dstChainId != chainId, "dstChainId invalid");
+
+        // request fee
+        uint256 fee = getFee(_dstChainId);
+        if (fee > 0) {
+            require(msg.value >= fee, "insufficient fee");
+
+            // transfer fee
+            (bool success, ) = feeReceiver.call{ value: msg.value }("");
+            require(success, "transfer fee failed");
+        }
 
         // increase nonce
         nonce++;
@@ -255,7 +265,7 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
         return nonce;
     }
 
-    function getFee(uint64 _dstChainId) external view returns(uint256) {
+    function getFee(uint64 _dstChainId) public view returns(uint256) {
         return IFeeController(feeController).getFee(chainId, _dstChainId);
     }
 }

@@ -1,4 +1,4 @@
-const { deployContract, contractAt, getContractAddress, sendTxn, getFrameSigner } = require('./lib/deploy')
+const { deployContract, contractAt, getContractAddress, sendTxn, getFrameSigner } = require('../lib/deploy')
 
 async function main() {
   const deployer = await getFrameSigner()

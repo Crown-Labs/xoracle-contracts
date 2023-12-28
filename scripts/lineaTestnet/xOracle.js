@@ -1,5 +1,5 @@
-const { deployContract, contractAt, getContractAddress, sendTxn, getFrameSigner } = require('./lib/deploy')
-const { config } = require('../config')
+const { deployContract, contractAt, getContractAddress, sendTxn, getFrameSigner } = require('../lib/deploy')
+const { config } = require('../../config')
 const readline = require('readline')
 
 async function main() {
@@ -8,7 +8,7 @@ async function main() {
   const relayNodes = config.relayNodes
   const pricefeedSigners = config.pricefeedSigners
   const wethAddress = getContractAddress('weth')
-
+  const threshold = 3
   const fulfillFee = 3000 // 30%
   const minGasPrice = 0.5 * 10 ** 9
   const minGasLimit = 1000000 // 1M
@@ -112,7 +112,7 @@ async function main() {
   for (let i = 0; i < pricefeedSigners.length; i++) {
     await sendTxn(xOracle.setSigner(pricefeedSigners[i], true), `xOracle.setSigner(${pricefeedSigners[i]})`)
   }
-  await sendTxn(xOracle.setThreshold(3), `xOracle.setThreshold(3)`)
+  await sendTxn(xOracle.setThreshold(threshold), `xOracle.setThreshold(${threshold})`)
 
   // set controller
   for (let i = 0; i < relayNodes.length; i++) {

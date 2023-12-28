@@ -50,6 +50,8 @@ function makeParameter(name) {
     param = [getContractAddress('xOracle'), 'OP/USD Price Feed', 28, 8]
   } else if (name == 'ARB/USD PriceFeed') {
     param = [getContractAddress('xOracle'), 'ARB/USD Price Feed', 29, 8]
+  } else if (name == 'XOracleMessage') {
+    param = [getContractAddress('xOracleMessage_logic'), config.proxyAdmin, '0x']
   }
 
   if (param.length != 0) {

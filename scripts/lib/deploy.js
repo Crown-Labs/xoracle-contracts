@@ -9,7 +9,7 @@ const contactAddress = {
   // contract
   xOracle: deployedAddress['XOracle'],
   xOracle_logic: deployedAddress['XOracle_logic'],
-  weth: config.tokens[getChainId(network)].weth,
+  weth: config.tokens[getChainId(network)]?.weth,
   btcPriceFeed: deployedAddress['BTC/USD PriceFeed'],
   ethPriceFeed: deployedAddress['ETH/USD PriceFeed'],
   bnbPriceFeed: deployedAddress['BNB/USD PriceFeed'],
@@ -30,6 +30,8 @@ const contactAddress = {
   atomPriceFeed: deployedAddress['ATOM/USD PriceFeed'],
   opPriceFeed: deployedAddress['OP/USD PriceFeed'],
   arbPriceFeed: deployedAddress['ARB/USD PriceFeed'],
+  xOracleMessage: deployedAddress['XOracleMessage'],
+  xOracleMessage_logic: deployedAddress['XOracleMessage_logic'],
 }
 
 function getContractAddress(name) {
@@ -79,7 +81,7 @@ async function contractAt(name, address, provider) {
 function getChainId(network) {
   const chainId = networkId[network]
   if (!chainId) {
-    throw new Error('Unsupported network')
+    throw new Error(`Unsupported network ${network}`)
   }
   return chainId
 }

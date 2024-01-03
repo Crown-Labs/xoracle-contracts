@@ -4,9 +4,8 @@ const crypto = require('crypto')
 const { ethers } = require('hardhat')
 const { toETH } = require('../scripts/lib/helper.js')
 
-const chainId = hre.network.config.chainId
-
 let signers = []
+let feeController
 let xOracleMessage
 let xOracleMessage_logic
 let xOracleMessage_proxy
@@ -18,7 +17,11 @@ describe('\n📌 ### Test xOracle Message ###\n', function () {
   })
 
   beforeEach('Deploy XOracleMessage Contract', async function () {
-    const [deployer, proxyAdmin, relayNode, user1, user2] = await ethers.getSigners()
+    const [deployer, proxyAdmin, relayNode, feeReceiver] = await ethers.getSigners()
+
+    // deploy feeController
+    const FeeController = await ethers.getContractFactory('FeeController')
+    feeController = await FeeController.deploy()
 
     // deploy logic
     const XOracleMessage = await ethers.getContractFactory('XOracleMessage')
@@ -30,7 +33,7 @@ describe('\n📌 ### Test xOracle Message ###\n', function () {
 
     // initialize
     xOracleMessage = await XOracleMessage.attach(xOracleMessage_proxy.address)
-    await xOracleMessage.initialize(chainId)
+    await xOracleMessage.initialize(feeController.address, feeReceiver.address)
 
     await xOracleMessage.setController(relayNode.address, true)
 
@@ -58,14 +61,7 @@ describe('\n📌 ### Test xOracle Message ###\n', function () {
     const account = [deployer, user1, user2].at(random(3))
 
     const revert = 'controller: forbidden'
-    const params = [
-      0x00, 
-      '0xffffffffffffffffffffffffffffffffffffffff', 
-      0, 
-      0, 
-      '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', 
-      []
-    ];
+    const params = [0, 0x00, '0xffffffffffffffffffffffffffffffffffffffff', 0, 0, '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', []]
     await expect(xOracleMessage.connect(account).fulfillMessage(...params)).to.be.revertedWith(revert)
 
     // setController false
@@ -81,7 +77,7 @@ describe('\n📌 ### Test xOracle Message ###\n', function () {
     const account = [deployer, relayNode, user1, user2].at(random(4))
 
     const revert = 'caller: only contract'
-    const params = [0x00, '0xffffffffffffffffffffffffffffffffffffffff', 0];
+    const params = [0x00, '0xffffffffffffffffffffffffffffffffffffffff', 0]
     await expect(xOracleMessage.connect(account).sendMessage(...params)).to.be.revertedWith(revert)
   })
 

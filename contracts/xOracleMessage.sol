@@ -17,7 +17,7 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
 
     // fulfilled message hash
     mapping(bytes32 => bool) public fulfillMessageHashes;
-    mapping(bytes32 => bytes32) public sendMessageNonceHashes; // nonceHash => messageHash
+    uint256 public fulfillCount;
 
     // controller
     mapping(address => bool) public controller;
@@ -131,10 +131,13 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
         // save messageHash
         fulfillMessageHashes[messageHash] = true;
 
+        // counter message fulfilled
+        fulfillCount++;
+
         // verify signatures
         verifySignatures(messageHash, _signatures);
 
-        // callback and collect gas used
+        // callback
         xOracleCallback(messageHash, _payload, _endpoint);
 
         emit FulfillMessage(_nonce, _payload, _endpoint, _srcChainId, _dstChainId, _srcTxHash);
@@ -259,10 +262,6 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
 
     function getMessageHashFulfilled(bytes32 _messageHash) external view returns (bool) {
         return fulfillMessageHashes[_messageHash];
-    }
-
-    function getNonce() external view returns (uint256) {
-        return nonce;
     }
 
     function getFee(uint64 _dstChainId) public view returns(uint256) {

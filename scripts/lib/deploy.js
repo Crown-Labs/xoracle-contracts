@@ -32,6 +32,7 @@ const contactAddress = {
   arbPriceFeed: deployedAddress['ARB/USD PriceFeed'],
   xOracleMessage: deployedAddress['XOracleMessage'],
   xOracleMessage_logic: deployedAddress['XOracleMessage_logic'],
+  feeController: deployedAddress['FeeController'],
 }
 
 function getContractAddress(name) {
@@ -120,7 +121,7 @@ function readTmpAddresses() {
 
 function writeTmpAddresses(json) {
   const tmpAddresses = Object.assign(readTmpAddresses(), json)
-  fs.writeFileSync(filePath, JSON.stringify(tmpAddresses))
+  fs.writeFileSync(filePath, JSON.stringify(tmpAddresses, null, 4))
 }
 
 async function sendTxn(txnPromise, label) {

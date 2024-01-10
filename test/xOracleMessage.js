@@ -157,7 +157,7 @@ describe('\n📌 ### Test xOracle Message ###\n', function () {
     expect(balanceAfter.sub(balanceBefore)).eq(fee)
   });
 
-  it("Test fulfillMessage", async function () {
+  it("Fulfill Message", async function () {
     const [deployer, proxyAdmin, relayNode, user1, user2, endpoint] = await ethers.getSigners()
     const account = [deployer, user1, user2].at(random(3))
     const {AddressZero} = ethers.constants
@@ -203,7 +203,6 @@ describe('\n📌 ### Test xOracle Message ###\n', function () {
       await xOracleMessage.setSigner(signers[i].publicAddress, false)
       await expect(await xOracleMessage.signers(signers[i].publicAddress)).eq(false)
     }
-    console.log("-----------------")
     
     // signer1 sign message
     const nonce = 1
@@ -255,11 +254,11 @@ describe('\n📌 ### Test xOracle Message ###\n', function () {
     await expect(xOracleMessage.connect(relayNode).fulfillMessage(nonce, payload, endpoint.address, chainIdBSC, chainIdHardHat, "0xdddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd", [signatureSigner1]))
     .to.be.revertedWith(revertThreshold)
 
-    // fulfill with signature not signer
+    // fulfill with signature non-signer
     await expect(xOracleMessage.connect(relayNode).fulfillMessage(nonce, payload, endpoint.address, chainIdBSC, chainIdHardHat, srcTxHash, [signatureNotSigner]))
     .to.be.revertedWith(revertThreshold)
     
-    // fulfill with 2 signature not signer
+    // fulfill with 2 signature non-signer
     await expect(xOracleMessage.connect(relayNode).fulfillMessage(nonce, payload, endpoint.address, chainIdBSC, chainIdHardHat, srcTxHash, [signatureNotSigner, signatureSigner2]))
     .to.be.revertedWith(revertThreshold)
 
@@ -271,24 +270,45 @@ describe('\n📌 ### Test xOracle Message ###\n', function () {
     await expect(xOracleMessage.connect(relayNode).fulfillMessage(nonce, payload, endpoint.address, chainIdBSC, chainIdHardHat, srcTxHash, [signatureSigner1]))
     .to.be.revertedWith(revertThreshold)
 
-    // fulfill with 1 signature and 1 signature not signer
+    // fulfill with 1 signature and 1 signature non-signer
     await expect(xOracleMessage.connect(relayNode).fulfillMessage(nonce, payload, endpoint.address, chainIdBSC, chainIdHardHat, srcTxHash, [signatureNotSigner, signatureSigner1]))
     .to.be.revertedWith(revertThreshold)
 
-    // signer2 sign other messageHash (nonce = 2)
+    // signer2 sign different messageHash (nonce = 2)
     const payload2 = encodePayload(2, tokenIndexes.USDT, tokenIndexes.EUSDT, amount, chainIdBSC, chainIdHardHat, user2.address, user2.address)
     const messageHash2 = getMessageHash(2, payload2, endpoint.address, chainIdBSC, chainIdHardHat, srcTxHash)
     const signatureSigner2_Nonce2 = await signer2.signMessage(ethers.utils.arrayify(messageHash2))
 
-    // let signer2Address = await recoverSigner(messageHash2, signatureSigner2_Nonce2);
-    // console.log("signer2Address: ", signer2Address)
+    const signer2Address = await recoverSigner(messageHash2, signatureSigner2_Nonce2);
+    await expect(signer2Address).to.eq(signer2.address)
 
-    // fulfill with 1 signature and 1 signature sign other messageHash (nonce = 2)
+    // fulfill with 1 signature and 1 signature sign different messageHash (nonce = 2)
     await expect(xOracleMessage.connect(relayNode).fulfillMessage(nonce, payload, endpoint.address, chainIdBSC, chainIdHardHat, srcTxHash, [signatureSigner1, signatureSigner2_Nonce2]))
+    .to.be.revertedWith(revertThreshold)
+    
+    // set signer = 3 and set threshold = 3
+    await xOracleMessage.setSigner(signer3.address, true)
+    await xOracleMessage.setThreshold(3)
+
+    await expect(xOracleMessage.connect(relayNode).fulfillMessage(nonce, payload, endpoint.address, chainIdBSC, chainIdHardHat, srcTxHash, [signatureSigner1, signatureSigner2_Nonce2, signatureSigner2_Nonce2, signatureSigner3]))
     .to.be.revertedWith(revertThreshold)
 
     await expect(xOracleMessage.connect(relayNode).fulfillMessage(nonce, payload, endpoint.address, chainIdBSC, chainIdHardHat, srcTxHash, [signatureSigner1, signatureSigner2, signatureSigner1, signatureSigner2_Nonce2]))
     .to.be.revertedWith(revertDuplicate)
+
+    await expect(xOracleMessage.connect(relayNode).fulfillMessage(nonce, payload, endpoint.address, chainIdBSC, chainIdHardHat, srcTxHash, [signatureSigner1, signatureSigner2, signatureSigner3, signatureSigner1, signatureSigner2_Nonce2, signatureSigner2_Nonce2]))
+    .to.be.revertedWith(revertDuplicate)
+    
+    // fulfill with 3 signature
+    await xOracleMessage.connect(relayNode).fulfillMessage(nonce, payload, endpoint.address, chainIdBSC, chainIdHardHat, srcTxHash, [signatureSigner1, signatureSigner2, signatureSigner3])
+
+    expect(await xOracleMessage.totalSigner()).to.eq(3)
+    expect(await xOracleMessage.threshold()).to.eq(3)
+    expect(await xOracleMessage.fulfillMessageHashes(messageHash)).to.eq(true)
+    expect(await xOracleMessage.fulfillCount()).to.eq(1)
+
+    await expect(xOracleMessage.connect(relayNode).fulfillMessage(nonce, payload, endpoint.address, chainIdBSC, chainIdHardHat, srcTxHash, [signatureSigner1, signatureSigner2, signatureSigner3]))
+    .to.be.revertedWith('messageHash already fulfilled')
   });
 })
 

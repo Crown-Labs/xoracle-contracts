@@ -16,5 +16,4 @@ contract WrapSendMessage {
     function sendMessage(bytes memory _payload, address _endpoint, uint64 _dstChainId) external payable returns (uint256) {
         return IXOracleMessage(xOracleMessage).sendMessage{ value: msg.value }(_payload, _endpoint, _dstChainId);
     }
-
 }

@@ -2,6 +2,22 @@ const networkId = {
   lineaTestnet: 59140,
 }
 
+const tokenIndexes = {
+  // Default xOracle Pricefeed
+  BTC: 0,
+  ETH: 1,
+  BNB: 2,
+  USDT: 3,
+  USDC: 5,
+
+  // Additional for Ethernal Passive Yield Token
+  EBTC: 100,
+  EETH: 101,
+  EBNB: 102,
+  EUSDT: 103,
+  EUSDC: 105,
+}
+
 const config = {
   // wallet
   proxyAdmin: '0xdDd982ea649D6aeEbF2Cc68fe4c2EB953330363f',
@@ -29,4 +45,4 @@ const config = {
   pricefeedApi: 'https://api.xoracle.io/prices/pricefeed/',
 }
 
-module.exports = { networkId, config }
+module.exports = { networkId, config, tokenIndexes }

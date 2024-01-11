@@ -232,7 +232,7 @@ describe('\n📌 ### Test xOracle Message ###\n', function () {
     const signatureSigner1 = await signer1.signMessage(ethers.utils.arrayify(messageHash))
     const signatureSigner2 = await signer2.signMessage(ethers.utils.arrayify(messageHash))
     const signatureSigner3 = await signer3.signMessage(ethers.utils.arrayify(messageHash))
-    const signatureNotSigner = await user1.signMessage(ethers.utils.arrayify(messageHash))
+    const signatureUser1 = await user1.signMessage(ethers.utils.arrayify(messageHash))
 
     await xOracleMessage.setController(relayNode.address, true)
 
@@ -275,11 +275,11 @@ describe('\n📌 ### Test xOracle Message ###\n', function () {
     .to.be.revertedWith(revertThreshold)
 
     // fulfill with signature non-signer
-    await expect(xOracleMessage.connect(relayNode).fulfillMessage(nonce, payload, endpoint.address, chainIdBSC, chainIdHardHat, srcTxHash, [signatureNotSigner]))
+    await expect(xOracleMessage.connect(relayNode).fulfillMessage(nonce, payload, endpoint.address, chainIdBSC, chainIdHardHat, srcTxHash, [signatureUser1]))
     .to.be.revertedWith(revertThreshold)
     
     // fulfill with 2 signature non-signer
-    await expect(xOracleMessage.connect(relayNode).fulfillMessage(nonce, payload, endpoint.address, chainIdBSC, chainIdHardHat, srcTxHash, [signatureNotSigner, signatureSigner2]))
+    await expect(xOracleMessage.connect(relayNode).fulfillMessage(nonce, payload, endpoint.address, chainIdBSC, chainIdHardHat, srcTxHash, [signatureUser1, signatureSigner2]))
     .to.be.revertedWith(revertThreshold)
 
     // set signer = 2 and set threshold = 2
@@ -291,7 +291,7 @@ describe('\n📌 ### Test xOracle Message ###\n', function () {
     .to.be.revertedWith(revertThreshold)
 
     // fulfill with 1 signature and 1 signature non-signer
-    await expect(xOracleMessage.connect(relayNode).fulfillMessage(nonce, payload, endpoint.address, chainIdBSC, chainIdHardHat, srcTxHash, [signatureNotSigner, signatureSigner1]))
+    await expect(xOracleMessage.connect(relayNode).fulfillMessage(nonce, payload, endpoint.address, chainIdBSC, chainIdHardHat, srcTxHash, [signatureUser1, signatureSigner1]))
     .to.be.revertedWith(revertThreshold)
 
     // signer2 sign different messageHash (nonce = 2)

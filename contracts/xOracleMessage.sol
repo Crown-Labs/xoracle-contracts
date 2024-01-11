@@ -17,7 +17,7 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
 
     // fulfilled message hash
     mapping(bytes32 => bool) public fulfillMessageHashes;
-    mapping(bytes32 => bytes32) public sendMessageNonceHashes; // nonceHash => messageHash
+    uint256 public fulfillCount;
 
     // controller
     mapping(address => bool) public controller;
@@ -80,9 +80,9 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
         require(!onlyWhitelist || whitelists[msg.sender], "whitelist: forbidden");
         
         // check params
-        require(_payload.length > 0, "payload invalid");
-        require(_endpoint != address(0), "endpoint invalid");
-        require(_dstChainId != chainId, "dstChainId invalid");
+        require(_payload.length > 0, "invalid payload");
+        require(_endpoint != address(0), "invalid endpoint");
+        require(_dstChainId != chainId, "invalid dstChainId");
 
         // request fee
         uint256 fee = getFee(_dstChainId);
@@ -120,10 +120,10 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
         bytes32 _srcTxHash,
         bytes[] memory _signatures
     ) external onlyController {
-        require(_payload.length > 0, "payload invalid");
-        require(_endpoint != address(0), "endpoint invalid");
+        require(_payload.length > 0, "invalid payload");
+        require(_endpoint != address(0), "invalid endpoint ");
         require(_srcChainId != _dstChainId, "invalid chainId");
-        require(_dstChainId == chainId, "dstChainId invalid");
+        require(_dstChainId == chainId, "invalid dstChainId");
 
         bytes32 messageHash = getMessageHash(_nonce, _payload, _endpoint, _srcChainId, _dstChainId, _srcTxHash);
         require(fulfillMessageHashes[messageHash] == false, "messageHash already fulfilled");
@@ -131,10 +131,13 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
         // save messageHash
         fulfillMessageHashes[messageHash] = true;
 
+        // counter message fulfilled
+        fulfillCount++;
+
         // verify signatures
         verifySignatures(messageHash, _signatures);
 
-        // callback and collect gas used
+        // callback
         xOracleCallback(messageHash, _payload, _endpoint);
 
         emit FulfillMessage(_nonce, _payload, _endpoint, _srcChainId, _dstChainId, _srcTxHash);
@@ -194,13 +197,13 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
     }
 
     function setController(address _controller, bool _flag) external onlyOwner {
-        require(_controller != address(0), "address invalid");
+        require(_controller != address(0), "invalid address");
         controller[_controller] = _flag;
         emit SetController(_controller, _flag);
     }
 
     function setSigner(address _signer, bool _flag) external onlyOwner {
-        require(_signer != address(0), "address invalid");
+        require(_signer != address(0), "invalid address");
         if (_flag && !signers[_signer]) {
             totalSigner++;
         } else if (!_flag && signers[_signer]) {
@@ -215,13 +218,13 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
     }
 
     function setThreshold(uint256 _threshold) external onlyOwner {
-        require(_threshold > 0 && _threshold <= totalSigner, "threshold invalid");
+        require(_threshold > 0 && _threshold <= totalSigner, "invalid threshold");
         threshold = _threshold;
         emit SetThreshold(_threshold);
     }
 
     function setWhitelist(address _whitelist, bool _flag) external onlyOwner {
-        require(_whitelist != address(0), "address invalid");
+        require(_whitelist != address(0), "invalid address");
         whitelists[_whitelist] = _flag;
         emit SetWhitelist(_whitelist, _flag);
     }
@@ -259,10 +262,6 @@ contract XOracleMessage is OwnableUpgradeable, PausableUpgradeable {
 
     function getMessageHashFulfilled(bytes32 _messageHash) external view returns (bool) {
         return fulfillMessageHashes[_messageHash];
-    }
-
-    function getNonce() external view returns (uint256) {
-        return nonce;
     }
 
     function getFee(uint64 _dstChainId) public view returns(uint256) {

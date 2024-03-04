@@ -53,7 +53,17 @@ contract XOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeable {
     mapping(uint256 => address) public priceFeedStores;
 
     // events
-    event RequestPrices(uint256 indexed reqId);
+    event RequestPrices(uint256 indexed reqId, 
+        uint256 timestamp,
+        address owner,
+        bytes payload,
+        uint256 status,
+        uint256 expiration,
+        uint256 maxGasPrice,
+        uint256 callbackGasLimit,
+        uint256 depositReqFee,
+        uint256 fulfillFee
+    );
     event CancelRequestPrices(uint256 indexed reqId);
     event FulfillRequest(uint256 indexed reqId, bool success, string message);
     event TransferRequestFee(uint256 indexed _reqId, address from, address to, uint256 reqFee);
@@ -91,7 +101,7 @@ contract XOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeable {
     // request
     // ------------------------------
     function requestPrices(
-        bytes memory _payload, 
+        bytes calldata _payload, 
         uint256 _expiration, 
         uint256 _maxGasPrice, 
         uint256 _callbackGasLimit
@@ -128,7 +138,18 @@ contract XOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeable {
             fulfillFee: fulfillFee
         });
         
-        emit RequestPrices(reqId);
+        emit RequestPrices(
+            reqId,
+            requests[reqId].timestamp, 
+            msg.sender,
+            _payload,
+            0,
+            _expiration,
+            _maxGasPrice,
+            _callbackGasLimit,
+            reqFee,
+            fulfillFee
+        );
         return reqId;
     }
 
@@ -149,7 +170,7 @@ contract XOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeable {
     // ------------------------------
     // fulfill request
     // ------------------------------
-    function fulfillRequest(Data[] memory _data, uint256 _reqId) external onlyController {
+    function fulfillRequest(Data[] calldata _data, uint256 _reqId) external onlyController {
         Request storage request = requests[_reqId];
         if (request.status != 0) {
             return;
@@ -203,7 +224,7 @@ contract XOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeable {
     // ------------------------------
     // static call function
     // ------------------------------
-    function estimateGasUsed(address _callback, bytes memory _payload, Data[] memory _data) external {
+    function estimateGasUsed(address _callback, bytes calldata _payload, Data[] calldata _data) external {
         uint256 timestamp = _data[0].timestamp;
         uint256 gasStart = gasleft();
         

@@ -65,7 +65,7 @@ contract XOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeable {
         uint256 fulfillFee
     );
     event CancelRequestPrices(uint256 indexed reqId);
-    event FulfillRequest(uint256 indexed reqId, bool success, string message);
+    event FulfillRequest(uint256 indexed reqId, bool success, string message, uint256 reqFee, uint256 gasUsed);
     event TransferRequestFee(uint256 indexed _reqId, address from, address to, uint256 reqFee);
     event XOracleCall(uint256 indexed reqId, bool success, string message);
     event RefundRequest(uint256 indexed reqId);
@@ -201,7 +201,7 @@ contract XOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeable {
             IERC20(weth).transfer(request.owner, request.depositReqFee - reqFee);
         }
 
-        emit FulfillRequest(_reqId, priceUpdate, message);
+        emit FulfillRequest(_reqId, priceUpdate, message, reqFee, gasUsed);
     }
 
     function refundRequest(uint256 _reqId) external onlyController {

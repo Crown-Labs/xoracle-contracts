@@ -52,6 +52,12 @@ contract XOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeable {
     // price feed store
     mapping(uint256 => address) public priceFeedStores;
 
+    // stats
+    uint256 public totalRequest;
+    uint256 public totalFulfill;
+    uint256 public totalRefund;
+    uint256 public totalCancel;
+
     // events
     event RequestPrices(uint256 indexed reqId, 
         uint256 timestamp,
@@ -115,6 +121,7 @@ contract XOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeable {
         // check mininum gas limit
         require(_callbackGasLimit > minGasLimit, "gas limit is too low");
 
+        // increase reqId
         reqId++;
 
         // deposit request fee
@@ -138,6 +145,9 @@ contract XOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeable {
             fulfillFee: fulfillFee
         });
         
+        // update stat
+        totalRequest++;
+
         emit RequestPrices(
             reqId,
             requests[reqId].timestamp, 
@@ -161,6 +171,9 @@ contract XOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeable {
         // set status cancel
         request.status = 2;
 
+        // update stat
+        totalCancel++;
+
         // refund request fee
         IERC20(weth).transfer(request.owner, request.depositReqFee);
 
@@ -177,6 +190,9 @@ contract XOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeable {
         }
         // set status executed
         request.status = 1;
+
+        // update stat
+        totalFulfill++;
 
         require(request.owner != address(0), "request not found");
         require(request.expiration > block.timestamp, "request is expired");
@@ -211,6 +227,9 @@ contract XOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeable {
         }
         // set status refund
         request.status = 3;
+
+        // update stat
+        totalRefund++;
 
         // callback
         xOracleCallback(request.owner, _reqId, false, request.payload, request.callbackGasLimit);
@@ -559,5 +578,10 @@ contract XOracle is IPriceFeed, OwnableUpgradeable, PausableUpgradeable {
             request.depositReqFee,
             request.fulfillFee
         );
+    }
+
+    function getTotalRequest() external view returns (uint256, uint256, uint256, uint256, uint256) {
+        uint256 totalPending = totalRequest - (totalFulfill + totalRefund + totalCancel);
+        return (totalRequest, totalFulfill, totalRefund, totalCancel, totalPending);
     }
 }

@@ -1,7 +1,6 @@
 const { expect } = require('chai')
 const crypto = require('crypto')
 const { ethers } = require('hardhat')
-const { tokenIndexes } = require('../config')
 
 const abiCoder = new ethers.utils.AbiCoder()
 const chainIdBSC = 56
@@ -154,7 +153,7 @@ describe('\n📌 ### Test xOracle Message ###\n', function () {
     await expect(wrapSendMessage.connect(user2).sendMessage(payload, AddressZero, chainIdHardHat, { value: 0 }))
     .to.be.revertedWith('invalid payload')
 
-    payload = encodePayload(1, tokenIndexes.USDT, tokenIndexes.EUSDT, amount, chainIdHardHat, chainIdBSC, user2.address, user2.address)
+    payload = encodePayload(1, amount, chainIdHardHat, chainIdBSC, user2.address, user2.address)
 
     await expect(wrapSendMessage.connect(user2).sendMessage(payload, AddressZero, chainIdHardHat, { value: 0 }))
     .to.be.revertedWith('invalid endpoint')
@@ -196,7 +195,7 @@ describe('\n📌 ### Test xOracle Message ###\n', function () {
     await expect(xOracleMessage.connect(relayNode).fulfillMessage(nonce, payload, AddressZero, chainIdHardHat, chainIdHardHat, srcTxHash, []))
     .to.be.revertedWith('invalid payload')
 
-    payload = encodePayload(1, tokenIndexes.USDT, tokenIndexes.EUSDT, amount, chainIdBSC, chainIdHardHat, user2.address, user2.address)
+    payload = encodePayload(1, amount, chainIdBSC, chainIdHardHat, user2.address, user2.address)
 
     await expect(xOracleMessage.connect(relayNode).fulfillMessage(nonce, payload, AddressZero, chainIdHardHat, chainIdHardHat, srcTxHash, []))
     .to.be.revertedWith('invalid endpoint')
@@ -227,7 +226,7 @@ describe('\n📌 ### Test xOracle Message ###\n', function () {
     // signer sign message
     let nonce = 1
     const srcTxHash = "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
-    const payload = encodePayload(nonce, tokenIndexes.USDT, tokenIndexes.EUSDT, amount, chainIdBSC, chainIdHardHat, user2.address, user2.address)
+    const payload = encodePayload(nonce, amount, chainIdBSC, chainIdHardHat, user2.address, user2.address)
     const messageHash = getMessageHash(nonce, payload, endpoint.address, chainIdBSC, chainIdHardHat, srcTxHash)
     const signatureSigner1 = await signer1.signMessage(ethers.utils.arrayify(messageHash))
     const signatureSigner2 = await signer2.signMessage(ethers.utils.arrayify(messageHash))
@@ -295,7 +294,7 @@ describe('\n📌 ### Test xOracle Message ###\n', function () {
     .to.be.revertedWith(revertThreshold)
 
     // signer2 sign different messageHash (nonce = 2)
-    const payload2 = encodePayload(2, tokenIndexes.USDT, tokenIndexes.EUSDT, amount, chainIdBSC, chainIdHardHat, user2.address, user2.address)
+    const payload2 = encodePayload(2, amount, chainIdBSC, chainIdHardHat, user2.address, user2.address)
     const messageHash2 = getMessageHash(2, payload2, endpoint.address, chainIdBSC, chainIdHardHat, srcTxHash)
     const signatureSigner2Nonce2 = await signer2.signMessage(ethers.utils.arrayify(messageHash2))
 
@@ -372,10 +371,10 @@ function expandDecimals(n, decimals) {
   return bigNumberify(n).mul(bigNumberify(10).pow(decimals))
 }
 
-function encodePayload(uid, srcTokenIndex, dstTokenIndex, amount, srcChainId, dstChainId, from, receiver) {
+function encodePayload(uid, amount, srcChainId, dstChainId, from, receiver) {
   const encodedData = abiCoder.encode(
-    ['uint256', 'uint256', 'uint256', 'uint256', 'uint64', 'uint64', 'address', 'address'],
-    [uid, srcTokenIndex, dstTokenIndex, amount, srcChainId, dstChainId, from, receiver]
+    ['uint256', 'uint256', 'uint64', 'uint64', 'address', 'address'],
+    [uid, amount, srcChainId, dstChainId, from, receiver]
   )
   return encodedData;
 }

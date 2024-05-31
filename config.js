@@ -1,5 +1,5 @@
 const networkId = {
-  lineaTestnet: 59140,
+
 }
 
 const tokenIndexes = {
@@ -36,10 +36,6 @@ const config = {
   feeReceiver: '0xdDd982ea649D6aeEbF2Cc68fe4c2EB953330363f',
   // tokens
   tokens: {
-    59140: {
-      // lineaTestnet
-      weth: '0x2C1b868d6596a18e32E61B901E4060C872647b6C',
-    },
   },
   // api
   pricefeedApi: 'https://api.xoracle.io/prices/pricefeed/',

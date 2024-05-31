@@ -446,7 +446,14 @@ describe('\n📌 ### Test xOracle ###\n', function () {
     const dataDuplicate = [...data, ...data]
 
     const tx = await xOracle.connect(relayNode).fulfillRequest(dataDuplicate, reqID)
-    await expect(tx).to.emit(xOracle, 'FulfillRequest').withArgs(reqID, false, 'setPrices: signer duplicate')
+    const txPromise = tx.wait()
+    await txPromise.then((receipt) => {
+      const event = receipt.events?.find((e) => e.event === 'FulfillRequest' && e.address === xOracle.address)
+      expect(event).to.not.be.undefined
+      expect(event.args[0]).to.equal(reqID)
+      expect(event.args[1]).to.equal(false)
+      expect(event.args[2]).to.equal('setPrices: signer duplicate')
+    })
   })
 
   it('Test adminRefundRequest', async function () {
@@ -491,7 +498,14 @@ describe('\n📌 ### Test xOracle ###\n', function () {
     const dataDuplicate = [...data, ...data]
 
     const tx = await xOracle.connect(relayNode).fulfillRequest(dataDuplicate, reqID)
-    await expect(tx).to.emit(xOracle, 'FulfillRequest').withArgs(reqID, false, 'setPrices: signer duplicate')
+    const txPromise = tx.wait()
+    await txPromise.then((receipt) => {
+      const event = receipt.events?.find((e) => e.event === 'FulfillRequest' && e.address === xOracle.address)
+      expect(event).to.not.be.undefined
+      expect(event.args[0]).to.equal(reqID)
+      expect(event.args[1]).to.equal(false)
+      expect(event.args[2]).to.equal('setPrices: signer duplicate')
+    })
   })
 
   it('Test signers under threshold', async function () {
@@ -514,7 +528,14 @@ describe('\n📌 ### Test xOracle ###\n', function () {
     const reqID = await xOracle.reqId() // last reqId (assume only one used)
     const prices = pricelist[random(pricelist.length)]
     const call = await relayNodeFulfill(relayNode, reqID, prices, 1.5, false)
-    await expect(call.tx).to.emit(xOracle, 'FulfillRequest').withArgs(reqID, false, 'setPrices: signers under threshold')
+    const txPromise = call.tx.wait()
+    await txPromise.then((receipt) => {
+      const event = receipt.events?.find((e) => e.event === 'FulfillRequest' && e.address === xOracle.address)
+      expect(event).to.not.be.undefined
+      expect(event.args[0]).to.equal(reqID)
+      expect(event.args[1]).to.equal(false)
+      expect(event.args[2]).to.equal('setPrices: signers under threshold')
+    })
 
     // remove signer
     await xOracle.setSigner(user1.address, false)
@@ -556,7 +577,14 @@ describe('\n📌 ### Test xOracle ###\n', function () {
       })
 
       let tx = await xOracle.connect(relayNode).fulfillRequest(data, reqID)
-      await expect(tx).to.emit(xOracle, 'FulfillRequest').withArgs(reqID, false, 'setPrices: prices count of signer is not equal')
+      const txPromise = tx.wait()
+      await txPromise.then((receipt) => {
+        const event = receipt.events?.find((e) => e.event === 'FulfillRequest' && e.address === xOracle.address)
+        expect(event).to.not.be.undefined
+        expect(event.args[0]).to.equal(reqID)
+        expect(event.args[1]).to.equal(false)
+        expect(event.args[2]).to.equal('setPrices: prices count of signer is not equal')
+      })
     }
   })
 

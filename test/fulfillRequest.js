@@ -32,6 +32,7 @@ let weth
 let simpleTrade
 let reqId
 let timestamp
+let signerCount
 
 describe('\n📌 ### Test xOracle FulfillRequest ###\n', function () {
   before('Deploy Contract', async function () {
@@ -74,7 +75,7 @@ describe('\n📌 ### Test xOracle FulfillRequest ###\n', function () {
     while (true) {
       console.log(`try request: ${url}`)
       data = await getJSONRequest(url)
-      if (data.length >= 3) {
+      if (data.length >= signerCount) {
         break
       }
       await sleep(1000 * 15)
@@ -148,11 +149,12 @@ async function deployXOracle() {
   await xOracle.connect(deployer).setController(controller.address, true)
 
   // Set signer
-  await xOracle.connect(deployer).setSigner(config.pricefeedSigners[0], true)
-  await xOracle.connect(deployer).setSigner(config.pricefeedSigners[1], true)
-  await xOracle.connect(deployer).setSigner(config.pricefeedSigners[2], true)
-  await xOracle.connect(deployer).setSigner(config.pricefeedSigners[3], true)
-  await xOracle.connect(deployer).setThreshold(3)
+  const signers = config.pricefeedSigners
+  signerCount = signers.length
+  for (let i = 0; i < signers.length; i++) {
+    await xOracle.connect(deployer).setSigner(signers[i], true)
+  }
+  await xOracle.connect(deployer).setThreshold(signerCount)
 }
 
 async function getRequest(reqID) {

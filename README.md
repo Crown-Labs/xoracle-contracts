@@ -6,10 +6,10 @@ This contract enables anyone to request price data and fulfill those requests on
 The xOracle chain is a public Proof of Authority (POA) blockchain designed to store real-time price feed information. It allows anyone to join the node and verify the transparency of the information feeds.
 
 ## 💭 xOracle's Architecture
-Fast Pricefee
+### Fast Pricefeed
 ![xOracle's Fast Pricefeed](https://github.com/Crown-Labs/xoracle-contracts/blob/main/docs/fast-pricefeed.jpg)
 
-Cross-chain Message
+### Cross-chain Message
 ![xOracle's Cross-chain Message](https://github.com/Crown-Labs/xoracle-contracts/blob/main/docs/cross-chain-message.jpg)
 
 ##  ⚙️ Local Development

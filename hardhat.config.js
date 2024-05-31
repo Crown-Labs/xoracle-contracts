@@ -36,26 +36,71 @@ module.exports = {
   networks: {
     hardhat: {
     },
-    lineaTestnet: {
-      url: `${process.env.LINEA_TESTNET_RPC}`,
-      chainId: parseInt(`${process.env.LINEA_TESTNET_CHAIN_ID}`),
-      gasPrice: parseInt(`${process.env.LINEA_TESTNET_GAS_PRICE}`) * 10**9,
+    arbTestnet: {
+      url: `https://sepolia-rollup.arbitrum.io/rpc`,
+      chainId: 421614,
+      gasPrice: 1 * 10**9,
       // accounts: [`0x${process.env.PRIVATE_KEY}`],
+    },
+    holesky: {
+      url: `https://ethereum-holesky.publicnode.com`,
+      chainId: 17000,
+      gasPrice: 8 * 10**9,
+      accounts: [`0x${process.env.PRIVATE_KEY}`],
+    },
+    sepolia: {
+      url: `https://rpc.sepolia.org`,
+      chainId: 11155111,
+      gasPrice: 55 * 10**9,
+      accounts: [`0x${process.env.PRIVATE_KEY}`],
+    },
+    bscTestnet: {
+      url: `https://bsc-testnet-rpc.publicnode.com`,
+      chainId: 97,
+      gasPrice: 10 * 10**9,
+      accounts: [`0x${process.env.PRIVATE_KEY}`],
     },
   },
   etherscan: {
     apiKey: {
-      lineaTestnet: `${process.env.LINEA_TESTNET_APIKEY}`,
+      arbTestnet: `${process.env.ARB_TESTNET_APIKEY}`,
+      holesky: `${process.env.ETHERSCAN_APIKEY}`,
+      sepolia: `${process.env.ETHERSCAN_APIKEY}`,
+      bscTestnet: `${process.env.BSC_TESTNET_APIKEY}`,
     },
     customChains: [{
-        network: "lineaTestnet",
-        chainId: parseInt(`${process.env.LINEA_TESTNET_CHAIN_ID}`),
-        urls: {
-          apiURL: "https://api-testnet.lineascan.build/api",
-          browserURL: "https://goerli.lineascan.build/"
-        }
-      },
-    ], 
+      network: "arbTestnet",
+      chainId: 421614,
+      urls: {
+        apiURL: "https://api-sepolia.arbiscan.io/api",
+        browserURL: "https://sepolia.arbiscan.io"
+      }
+    },
+    {
+      network: "holesky",
+      chainId: 17000,
+      urls: {
+        apiURL: "https://api-holesky.etherscan.io/api",
+        browserURL: "https://holesky.etherscan.io"
+      }
+    },
+    {
+      network: "sepolia",
+      chainId: 11155111,
+      urls: {
+        apiURL: "https://api-sepolia.etherscan.io/api",
+        browserURL: "https://sepolia.etherscan.io"
+      }
+    },
+    {
+      network: "bscTestnet",
+      chainId: 97,
+      urls: {
+        apiURL: "https://api-testnet.bscscan.com/api",
+        browserURL: "https://testnet.bscscan.com"
+      }
+    },
+  ], 
   }, 
   mocha: {
     timeout: 500000

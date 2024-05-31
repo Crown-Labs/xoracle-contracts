@@ -34,7 +34,7 @@
     "test": "npx hardhat test --network hardhat",
     "compile": "npx hardhat compile",
     "deploy": "npx hardhat run --network",
-    "verify": "npx hardhat verify --network lineaTestnet",
-    "verifyAll": "npx hardhat run scripts/verifyAll.js --network lineaTestnet"
+    "verify": "npx hardhat verify --network",
+    "verifyAll": "npx hardhat run scripts/verifyAll.js --network"
   }
 }

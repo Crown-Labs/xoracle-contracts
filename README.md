@@ -27,7 +27,7 @@ Local Setup Steps:
 #### - Arbitrum Testnet
 |Contract       | Addresss                                                                                                            |
 |:-------------:|:-------------------------------------------------------------------------------------------------------------------:|
-|xOracle            |[0xb376D2fe17CAfc7Fe841E16b897Fe658f1e8De7D](https://sepolia.arbiscan.io/address/0xb376D2fe17CAfc7Fe841E16b897Fe658f1e8De7D)|
+|xOracle            |[0xa3B16ad55513d91c8650Ef7D218A5299d59265d7](https://sepolia.arbiscan.io/address/0xa3B16ad55513d91c8650Ef7D218A5299d59265d7)|
 |BTC/USD PriceFeed            |[0x1296d3a1DE3f7BE8cB1F76C888e51c47915d8001](https://sepolia.arbiscan.io/address/0x1296d3a1DE3f7BE8cB1F76C888e51c47915d8001)|
 |ETH/USD PriceFeed            |[0x4c685b51bc534508a3AfBf0d8F4c0Ec73E5d3c5A](https://sepolia.arbiscan.io/address/0x4c685b51bc534508a3AfBf0d8F4c0Ec73E5d3c5A)|
 |BNB/USD PriceFeed            |[0xba13123b80d65fC170B30f29918884f212f62Fc5](https://sepolia.arbiscan.io/address/0xba13123b80d65fC170B30f29918884f212f62Fc5)|

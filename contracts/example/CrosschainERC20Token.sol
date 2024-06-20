@@ -10,7 +10,7 @@ contract CrosschainERC20Token is ERC20, Ownable {
     uint64 public immutable chainId;
     address public xOracleMessage;
 
-    mapping (uint64 => address) endpointTokens;
+    mapping (uint64 => address) public endpointTokens;
 
     event SendCrosschain(uint64 dstChainId, address from, address receiver, uint256 amount);
     event ReceivedCrosschain(uint64 srcChainId, address from, address receiver, uint256 amount);

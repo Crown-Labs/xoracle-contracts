@@ -14,7 +14,7 @@ contract SimpleTrade {
     // xoracle 
     address public xOracle;
     address public weth;
-    mapping (uint256 => uint256) requestMap;
+    mapping (uint256 => uint256) public requestMap;
 
     // apps
     struct Position {
@@ -27,7 +27,7 @@ contract SimpleTrade {
         uint256 realizePL;
         uint256 status; // 0 = pending, 1 = revert (can't open), 2 = open, 3 = closed
     }
-    mapping (uint256 => Position) positions;
+    mapping (uint256 => Position) public positions;
     uint256 public lastPositionId;
     mapping (uint256 => bool) public tokenIndexList;
 

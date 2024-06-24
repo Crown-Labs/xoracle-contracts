@@ -1,5 +1,5 @@
 const networkId = {
-
+  eth: 1
 }
 
 const config = {
@@ -20,6 +20,10 @@ const config = {
   feeReceiver: '0xdDd982ea649D6aeEbF2Cc68fe4c2EB953330363f',
   // tokens
   tokens: {
+    1: {
+      // eth
+      weth: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+    },
   },
   // api
   pricefeedApi: 'https://api.xoracle.io/prices/pricefeed/',

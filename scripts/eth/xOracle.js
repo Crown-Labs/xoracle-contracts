@@ -8,7 +8,7 @@ async function main() {
   const relayNodes = config.relayNodes
   const pricefeedSigners = config.pricefeedSigners
   const wethAddress = getContractAddress('weth')
-  const threshold = 1
+  const threshold = 3
   const fulfillFee = 3000 // 30%
   const minGasPrice = 0.5 * 10 ** 9
   const minGasLimit = 1000000 // 1M
@@ -18,7 +18,7 @@ async function main() {
     ETH: 1,
     BNB: 2,
     USDT: 3,
-    BUSD: 4,
+    // BUSD: 4,
     USDC: 5,
     DAI: 6,
     XRP: 10,

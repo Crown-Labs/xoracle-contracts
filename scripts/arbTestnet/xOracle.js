@@ -8,7 +8,7 @@ async function main() {
   const relayNodes = config.relayNodes
   const pricefeedSigners = config.pricefeedSigners
   const wethAddress = getContractAddress('weth')
-  const threshold = 3
+  const threshold = 1
   const fulfillFee = 3000 // 30%
   const minGasPrice = 0.5 * 10 ** 9
   const minGasLimit = 1000000 // 1M
@@ -20,18 +20,18 @@ async function main() {
     USDT: 3,
     BUSD: 4,
     USDC: 5,
-    // DAI: 6,
-    // XRP: 10,
-    // DOGE: 11,
-    // TRX: 12,
-    // ADA: 20,
+    DAI: 6,
+    XRP: 10,
+    DOGE: 11,
+    TRX: 12,
+    ADA: 20,
     MATIC: 21,
-    // SOL: 22,
-    // DOT: 23,
-    // AVAX: 24,
-    // FTM: 25,
-    // NEAR: 26,
-    // ATOM: 27,
+    SOL: 22,
+    DOT: 23,
+    AVAX: 24,
+    FTM: 25,
+    NEAR: 26,
+    ATOM: 27,
     OP: 28,
     ARB: 29,
   }
@@ -40,7 +40,7 @@ async function main() {
 
   // false = new deploy all contracts
   // true = migrate to new xOracle logic
-  const isMigrate = true
+  let isMigrate = false
 
   // deploy logic
   const xOracle_logic = await deployContract('XOracle', [], 'XOracle_logic', deployer)
@@ -75,6 +75,8 @@ async function main() {
     deployer = await getFrameSigner()
   }
 
+  isMigrate = true
+
   // PriceFeedStore
   if (!isMigrate) {
     // deploy
@@ -102,6 +104,10 @@ async function main() {
         tokenIndex: tokenIndexs[key],
       })
     }
+  }
+
+  for (let item of list) {
+    await sendTxn(item.contract.setXOracle(xOracle.address), `PriceFeedStore.setXOracle(${xOracle.address})`)
   }
 
   for (let item of list) {

@@ -55,3 +55,12 @@ Thumbs.db
 # .env
 .env
 .env_bk
+
+# ignore doc resources
+scripts/example/deploy.js
+scripts/example/setEndpoint.js
+scripts/example/sendCrosschain.js
+
+# testnet ignore
+config-testnet.js
+scripts/testnet

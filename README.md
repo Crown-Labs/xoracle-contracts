@@ -48,7 +48,31 @@ Local Setup Steps:
 |OP/USD PriceFeed            |[0x7943EBf07bBf8b0068d708c1997FFB22b15eEB57](https://etherscan.io/address/0x7943EBf07bBf8b0068d708c1997FFB22b15eEB57)|
 |ARB/USD PriceFeed            |[0x0f73CD73993E224358b8cB412A5331bfdf3422Cc](https://etherscan.io/address/0x0f73CD73993E224358b8cB412A5331bfdf3422Cc)|
 
-#### - Arbitrum Testnet
+#### - Arbitrum
+|Contract       | Addresss                                                                                                            |
+|:-------------:|:-------------------------------------------------------------------------------------------------------------------:|
+|xOracle            |[0xC0Ef0994DC97cDEf74Fb0329ae92b0659A9dE6dD](https://arbiscan.io/address/0xC0Ef0994DC97cDEf74Fb0329ae92b0659A9dE6dD)|
+|BTC/USD PriceFeed            |[0x20aF1DC23DD0CdfCcE682Ed40C5b6c2287591a97](https://arbiscan.io/address/0x20aF1DC23DD0CdfCcE682Ed40C5b6c2287591a97)|
+|ETH/USD PriceFeed            |[0xb1fFdEAd0Dc23c63ad88fa156e555dB717Ee5FF3](https://arbiscan.io/address/0xb1fFdEAd0Dc23c63ad88fa156e555dB717Ee5FF3)|
+|BNB/USD PriceFeed            |[0x16D7b27B837d9741F1034FBab6576DC436D9dC39](https://arbiscan.io/address/0x16D7b27B837d9741F1034FBab6576DC436D9dC39)|
+|USDT/USD PriceFeed            |[0x9db0b00e389983C9062fc90B38a847Bce6ADb755](https://arbiscan.io/address/0x9db0b00e389983C9062fc90B38a847Bce6ADb755)|
+|USDC/USD PriceFeed            |[0xfd7Ede2bD516c1eab7DE1a565987339a9826b095](https://arbiscan.io/address/0xfd7Ede2bD516c1eab7DE1a565987339a9826b095)|
+|DAI/USD PriceFeed            |[0x0C2F452a26C6ACde14F476ADaAA6e2CAa7778bdb](https://arbiscan.io/address/0x0C2F452a26C6ACde14F476ADaAA6e2CAa7778bdb)|
+|XRP/USD PriceFeed            |[0xcFa821318F06d2dED71380061059f3ed34942EAe](https://arbiscan.io/address/0xcFa821318F06d2dED71380061059f3ed34942EAe)|
+|DOGE/USD PriceFeed            |[0xb3A4C7d8F742cDA1c55B1F914E5a83Dd29fA54a0](https://arbiscan.io/address/0xb3A4C7d8F742cDA1c55B1F914E5a83Dd29fA54a0)|
+|TRX/USD PriceFeed            |[0x6e1146CdEf820AADF7c322328294C6e804B4Db73](https://arbiscan.io/address/0x6e1146CdEf820AADF7c322328294C6e804B4Db73)|
+|ADA/USD PriceFeed            |[0xd85673d21879E0c199228a893ec70A64Cb7F224F](https://arbiscan.io/address/0xd85673d21879E0c199228a893ec70A64Cb7F224F)|
+|MATIC/USD PriceFeed            |[0x50f9756fB86BA4b87af987644F4e0007003f73Ce](https://arbiscan.io/address/0x50f9756fB86BA4b87af987644F4e0007003f73Ce)|
+|SOL/USD PriceFeed            |[0x43493e258D0800F87C3Ac8CE46b0d3AC941769F6](https://arbiscan.io/address/0x43493e258D0800F87C3Ac8CE46b0d3AC941769F6)|
+|DOT/USD PriceFeed            |[0xB82764559eABcecF2D518F49C623cF14A4438353](https://arbiscan.io/address/0xB82764559eABcecF2D518F49C623cF14A4438353)|
+|AVAX/USD PriceFeed            |[0x015b361fB273Af8910C527924336e94d30f75B60](https://arbiscan.io/address/0x015b361fB273Af8910C527924336e94d30f75B60)|
+|FTM/USD PriceFeed            |[0xE16066715ed752026DCe9da470E029f03594d6A1](https://arbiscan.io/address/0xE16066715ed752026DCe9da470E029f03594d6A1)|
+|NEAR/USD PriceFeed            |[0x1887e26DB8495A4fd27E77BFe2b83A85F1Fd4CF6](https://arbiscan.io/address/0x1887e26DB8495A4fd27E77BFe2b83A85F1Fd4CF6)|
+|ATOM/USD PriceFeed            |[0xa85309730D14345F31De2551a23Af6e2CD6D1346](https://arbiscan.io/address/0xa85309730D14345F31De2551a23Af6e2CD6D1346)|
+|OP/USD PriceFeed            |[0xEB81f6658839f66792976054213A288E2087e525](https://arbiscan.io/address/0xEB81f6658839f66792976054213A288E2087e525)|
+|ARB/USD PriceFeed            |[0x788595EC88a2dF4e1a4ee275A9A988326106dC4F](https://arbiscan.io/address/0x788595EC88a2dF4e1a4ee275A9A988326106dC4F)|
+
+#### - Arbitrum Sepolia
 |Contract       | Addresss                                                                                                            |
 |:-------------:|:-------------------------------------------------------------------------------------------------------------------:|
 |xOracle            |[0xa3B16ad55513d91c8650Ef7D218A5299d59265d7](https://sepolia.arbiscan.io/address/0xa3B16ad55513d91c8650Ef7D218A5299d59265d7)|
@@ -79,6 +103,7 @@ Local Setup Steps:
 |Chain       |Chain ID       | Message Contract Addresss                                                                                                            |
 |:-------------:|:-------------:|:-------------------------------------------------------------------------------------------------------------------:|
 |Ethereum            |1           |[0x50116e06aA816741f212Cd92B8dFDc2FaaAF8202](https://etherscan.io/address/0x50116e06aA816741f212Cd92B8dFDc2FaaAF8202)|
+|Arbitrum            |42161           |[0x7Da71EFb1de50cc09A07727053b52e9F198005E9](https://arbiscan.io/address/0x7Da71EFb1de50cc09A07727053b52e9F198005E9)|
 
 #### - Testnet
 

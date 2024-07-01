@@ -21,7 +21,7 @@ contract CrosschainERC20Token is ERC20, Ownable {
         string memory _symbol, 
         address _xOracleMessage, 
         uint256 _initialSupply
-    ) ERC20( _name, _symbol) {
+    ) ERC20(_name, _symbol) {
         require(_xOracleMessage != address(0), "invalid address");
 
         chainId = uint64(block.chainid);

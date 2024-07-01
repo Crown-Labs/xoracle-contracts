@@ -1,9 +1,11 @@
 const networkId = {
-  eth: 1
+  eth: 1,
+  arb: 42161
 }
 
 const config = {
   // wallet
+  xOracleOwner: '0x6CC5420189D84866970ef2476Eaaf59Df76cf14b',
   proxyAdmin: '0xdDd982ea649D6aeEbF2Cc68fe4c2EB953330363f',
   pricefeedSigners: [
     '0x866739f5308D27B091445f6A0E10b29539aB6123',
@@ -23,6 +25,10 @@ const config = {
     1: {
       // eth
       weth: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+    },
+    42161: {
+      // eth
+      weth: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
     },
   },
   // api

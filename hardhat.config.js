@@ -35,11 +35,20 @@ module.exports = {
   },
   networks: {
     hardhat: {
+      /* forking: {
+        url: "", 
+      }, */
     },
     eth: {
       url: `https://ethereum-rpc.publicnode.com`,
       chainId: 1,
       gasPrice: 2 * 10**9,
+    },
+    arb: {
+      url: `https://arbitrum-one-rpc.publicnode.com`,
+      chainId: 42161,
+      gasPrice: 0.1 * 10**9,
+      accounts: [`0x${process.env.PRIVATE_KEY}`],
     },
     arbTestnet: {
       url: `https://sepolia-rollup.arbitrum.io/rpc`,
@@ -69,7 +78,8 @@ module.exports = {
   etherscan: {
     apiKey: {
       eth: `${process.env.ETHERSCAN_APIKEY}`,
-      arbTestnet: `${process.env.ARB_TESTNET_APIKEY}`,
+      arb: `${process.env.ARBSCAN_APIKEY}`,
+      arbTestnet: `${process.env.ARBSCAN_APIKEY}`,
       holesky: `${process.env.ETHERSCAN_APIKEY}`,
       sepolia: `${process.env.ETHERSCAN_APIKEY}`,
       bscTestnet: `${process.env.BSC_TESTNET_APIKEY}`,
@@ -80,6 +90,14 @@ module.exports = {
       urls: {
         apiURL: "https://api.etherscan.io/api",
         browserURL: "https://etherscan.io"
+      }
+    },
+    {
+      network: "arb",
+      chainId: 42161,
+      urls: {
+        apiURL: "https://api.arbiscan.io/api",
+        browserURL: "https://arbiscan.io"
       }
     },
     {
